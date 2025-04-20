@@ -74,7 +74,7 @@ package-mode = false # Disable installing the project itself
 [tool.poetry.dependencies]
 python = "^3.11"
 aiogram = "^3.0.0"
-aio-pika = "9.4.1"
+aio-pika = "9.5.5"
 dataclasses-json = "^0.5.7"
 marshmallow-dataclass = "^8.5.8"
 marshmallow = "^3.16.0"

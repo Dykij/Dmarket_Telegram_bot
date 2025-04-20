@@ -1,0 +1,55 @@
+# Расширение конфигурации Ruff
+
+# Путь к исходникам, которые нужно проверять
+src = ["price_monitoring", "common", "proxy_http", "tests"]
+
+# Игнорируются файлы и директории
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    "venv",
+    ".eggs",
+    "*.egg",
+]
+
+# Максимальная длина строки (должна соответствовать black)
+line-length = 100
+
+# Настройка isort
+[lint.isort]
+force-single-line = false
+known-first-party = ["price_monitoring", "common", "proxy_http"]
+force-sort-within-sections = true
+combine-as-imports = true
+
+# Настройка форматирования с помощью Ruff
+[format]
+quote-style = "double"  # Использование двойных кавычек
+indent-style = "space"  # Использование пробелов для отступов
+line-ending = "auto"    # Автоматическая установка окончаний строк
+
+[lint]
+# Включенные правила
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "A",    # flake8-builtins
+    "C4",   # flake8-comprehensions
+    "SIM",  # flake8-simplify
+    "TID",  # flake8-tidy-imports
+    "ARG",  # flake8-unused-arguments
+    "PTH",  # flake8-use-pathlib
+    "ERA",  # eradicate
+    "PL",   # pylint
+    "RUF",  # ruff-specific rules
+]
+# Игнорируемые правила
+ignore = [
+    "E501",    # Игнорируем ошибку длинных строк (будем использовать black для форматирования)
+]

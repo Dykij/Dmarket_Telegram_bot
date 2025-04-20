@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.11-management
+    ports:
+      - "5672:5672" # AMQP port
+      - "15672:15672" # Management UI port
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/
+    environment:
+      RABBITMQ_DEFAULT_USER: guest # Use defaults from env_var.py getters
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  dmarket_parser:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - dmarket_parser.dev.env # Use the new env file
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    command: python dmarket_parser.py # Command to run the new parser
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - worker.dev.env # Ensure this env file has all needed vars (RabbitMQ, Redis, DMarket, Telegram)
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: python worker.py # Command to run the worker
+    restart: unless-stopped
+
+volumes:
+  rabbitmq_data:
+  redis_data:

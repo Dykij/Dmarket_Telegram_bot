@@ -1,0 +1,72 @@
+version: '3'
+
+tasks:
+  default:
+    cmds:
+      - task: run
+
+  build:
+    desc: Build docker images
+    cmds:
+      - docker compose build
+
+  run:
+    desc: Run application
+    cmds:
+      - docker compose up -d --build
+
+  stop:
+    desc: Stop application
+    cmds:
+      - docker compose down
+
+  logs:
+    desc: Show logs for a specific service (e.g., task logs service=worker)
+    cmds:
+      - docker compose logs -f {{.service | default "dmarket-parser"}}    vars:
+      service: '{{.CLI_ARGS}}'
+
+  # Removed legacy logs tasks
+
+  # Updated logs-worker to just use the generic logs task
+  logs-worker:
+    desc: Show worker logs
+    cmds:
+      - task: logs
+        vars: {service: worker}
+
+  # Added logs-dmarket-parser
+  logs-dmarket-parser:
+    desc: Show dmarket_parser logs
+    cmds:
+      - task: logs
+        vars: {service: dmarket-parser}
+
+  # Removed legacy shell tasks
+
+  # Updated shell-worker
+  shell-worker:
+    desc: Run shell in worker container
+    cmds:
+      - docker compose exec worker bash
+
+  # Added shell-dmarket-parser
+  shell-dmarket-parser:
+    desc: Run shell in dmarket_parser container
+    cmds:
+      - docker compose exec dmarket-parser bash
+
+  # Removed upload-proxies and create-csmoney-tasks as they seem irrelevant now
+
+  # Keep lint and format tasks
+  lint:
+    desc: Run linters
+    cmds:
+      - poetry run ruff check .
+      - poetry run mypy .
+
+  format:
+    desc: Format code
+    cmds:
+      - poetry run ruff format .
+      - poetry run isort .

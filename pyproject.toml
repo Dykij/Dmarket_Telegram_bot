@@ -82,7 +82,7 @@ marshmallow-enum = "^1.5.1"
 aioredis = "==2.0.0"  # Закрепляем версию
 aioredis-lock = "^0.1.0"
 aiohttp = "^3.9.0"
-aiohttp-socks = "^0.7.1"
+aiohttp-socks = "^0.10.1"
 PySocks = "^1.7.1"
 random-user-agent = "^1.0.1"
 json-logging = "^1.3.0"

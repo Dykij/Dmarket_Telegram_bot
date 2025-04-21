@@ -3,13 +3,17 @@
 ## High-Level Features
 * Supports proxies (HTTP, SOCKS4, SOCKS5)
 * Built using asyncio + uvloop
-* Resistant to failure with comprehensive error handling
+* Resistant to failure with comprehensive error handling and circuit breaker pattern
 * Enhanced security and data validation
 * Efficient batch processing for handling large datasets
 * Covered by unit tests (almost 100% coverage)
 * Most obvious bottlenecks are optimized
 * Created a simple CI pipeline
 * Added tracing support for some features using Zipkin
+* Advanced rate limiting with adaptive backoff strategies
+* Rich media support in Telegram notifications (images, videos, animations)
+* Interactive user interface with inline keyboards in Telegram
+* Comprehensive monitoring and health check system
 
 ## Technologies
 * Python 3.10, Asyncio, Poetry
@@ -17,7 +21,10 @@
 * Redis
 * RabbitMQ
 * Pytest
-* Pylint, mypy, black
+* Pylint, mypy, black, ruff
+* Aiohttp for HTTP client and server
+* Zipkin for distributed tracing
+* Custom monitoring and metrics collection
 
 ## Simplified Flow Chart
 
@@ -109,12 +116,34 @@ The system incorporates multiple layers of security and data validation:
 ### Security Measures
 * **Input Sanitization**: All user-facing inputs and external data are sanitized to prevent injection attacks
 * **Sensitive Data Protection**: API keys and authentication tokens are automatically masked in logs
-* **Rate Limiting**: Protection against excessive requests to prevent abuse
+* **Advanced Rate Limiting**: Protection against excessive requests with adaptive backoff strategies
+* **Circuit Breaker Pattern**: Prevents cascading failures by temporarily disabling failing services
 
 ### Error Handling
 * **Graceful Failure**: The system is designed to continue operating even when parts of it encounter errors
 * **Detailed Logging**: Comprehensive logging with appropriate detail levels helps with troubleshooting
-* **Circuit Breaking**: Failing external services are temporarily disabled to prevent cascading failures
+* **Granular Error Classification**: Specific error types for different API errors enable targeted handling
+* **Retry Logic**: Automatic retries with exponential backoff for transient errors
 
 The validation framework can be found [here](price_monitoring/validation.py).
 
+## Monitoring and Observability
+
+The system includes comprehensive monitoring and observability features:
+
+### Health Checks
+* **Component Health Monitoring**: Individual health checks for Redis, RabbitMQ, and DMarket API
+* **Health Status API**: HTTP endpoint for external monitoring systems to check application health
+* **Degradation Detection**: Identifies degraded services before they fail completely
+
+### Metrics Collection
+* **Performance Metrics**: Tracks key performance indicators like request counts and durations
+* **Resource Usage**: Monitors system resource utilization
+* **Business Metrics**: Tracks business-relevant metrics like processed items and notifications
+
+### Monitoring Integration
+* **HTTP API**: Exposes metrics and health data via HTTP endpoints
+* **Prometheus Compatible**: Can be integrated with Prometheus for metrics collection
+* **Grafana Dashboards**: Supports visualization through Grafana
+
+The monitoring system can be found [here](monitoring/).

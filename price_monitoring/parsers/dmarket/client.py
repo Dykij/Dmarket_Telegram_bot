@@ -2,19 +2,36 @@
 
 import asyncio
 import json
-# from async_limits import AsyncLimiter  # Comment out unused import
-import logging  # Use standard logging
+import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import aiohttp
 
 from common.dmarket_auth import build_signature
-# Correct import path based on search results
-from price_monitoring.storage.proxy.abstract_proxy_storage import \
-    AbstractProxyStorage
+from common.errors import (
+    CircuitBreaker,
+    CircuitBreakerOpenError,
+    DMarketAPIError,
+    DMarketAuthError,
+    DMarketRateLimitError,
+    DMarketResourceError,
+    DMarketRequestError,
+    DMarketServerError,
+    DMARKET_PUBLIC_CIRCUIT_BREAKER,
+    DMARKET_PRIVATE_CIRCUIT_BREAKER,
+    DMARKET_TRADING_CIRCUIT_BREAKER,
+    classify_dmarket_error
+)
+from price_monitoring.storage.proxy.abstract_proxy_storage import AbstractProxyStorage
+from utils.rate_limiter import (
+    DMARKET_PUBLIC_RATE_LIMITER,
+    DMARKET_PRIVATE_RATE_LIMITER,
+    DMARKET_TRADING_RATE_LIMITER,
+    RateLimiter
+)
 
-logger = logging.getLogger(__name__)  # Initialize standard logger
+logger = logging.getLogger(__name__)
 
 
 class DMarketClient:
@@ -27,8 +44,9 @@ class DMarketClient:
         public_key: str,
         session: aiohttp.ClientSession | None = None,
         proxy_storage: AbstractProxyStorage | None = None,
-        # limiter: AsyncLimiter | None = None,  # Keep commented out
-        limiter: Any | None = None,  # Use Any as a placeholder
+        rate_limiter: RateLimiter | None = None,
+        circuit_breaker: CircuitBreaker | None = None,
+        max_retries: int = 3,
     ):
         """Initializes the DMarketClient.
 
@@ -49,7 +67,9 @@ class DMarketClient:
         self._base_url = "https://api.dmarket.com"
         self._session = session
         self._proxy_storage = proxy_storage
-        self._limiter = limiter
+        self._rate_limiter = rate_limiter
+        self._circuit_breaker = circuit_breaker
+        self._max_retries = max_retries
 
     async def close_session(self):
         """Closes the aiohttp client session if it was created internally."""
@@ -66,14 +86,40 @@ class DMarketClient:
         self,
         method: str,
         path: str,
-        params: Optional[Dict[str, Any]] = None,  # Use Dict and Optional
-        data: Optional[Dict[str, Any]] = None,  # Use Dict and Optional
-    ) -> Optional[Dict[str, Any]]:  # Use Dict and Optional
-        """Makes an asynchronous request to the DMarket API."""
+        params: Optional[Dict[str, Any]] = None,
+        data: Optional[Dict[str, Any]] = None,
+        retry_count: int = 0,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Makes an asynchronous request to the DMarket API with retry logic and circuit breaker.
+
+        Args:
+            method: HTTP method (GET, POST, etc.)
+            path: API endpoint path
+            params: Query parameters
+            data: Request body data
+            retry_count: Current retry attempt (used internally for recursion)
+
+        Returns:
+            API response as a dictionary, or None if the request failed
+
+        Raises:
+            DMarketAPIError: If an API error occurs and max retries are exceeded
+            CircuitBreakerOpenError: If the circuit breaker is open
+        """
+        # Get the appropriate circuit breaker for this endpoint
+        circuit_breaker = self._get_circuit_breaker_for_path(path)
+
+        # Check if circuit breaker allows the request
+        if circuit_breaker and not circuit_breaker.allow_request():
+            open_until = circuit_breaker._last_failure_time + circuit_breaker.reset_timeout
+            raise CircuitBreakerOpenError(circuit_breaker.name, open_until)
+
         session = await self._get_session()
         url = f"{self._base_url}{path}"
         timestamp = str(int(time.time()))
         body_str: str | None = None
+
         # If data is provided, convert it to a JSON string
         if data is not None:
             body_str = json.dumps(data, separators=(",", ":"))
@@ -83,14 +129,13 @@ class DMarketClient:
             self._secret_key,
             method,
             path,
-            timestamp,  # Pass timestamp as string
+            timestamp,
             body_str,
         )
 
         headers = {
             "X-Api-Key": self._public_key,
-            # Break line to fix length
-            "X-Request-Sign": (f"dmar ed25519 {signature}"),
+            "X-Request-Sign": f"dmar ed25519 {signature}",
             "X-Sign-Timestamp": timestamp,
             "Content-Type": "application/json",
         }
@@ -104,12 +149,14 @@ class DMarketClient:
             #     proxy_url = str(proxy)
             pass  # Placeholder for actual proxy retrieval logic
 
-        try:
-            # Use limiter if available
-            # if self._limiter:
-            #     await self._limiter.acquire()
+        # Determine which rate limiter to use based on the endpoint
+        rate_limiter = self._get_rate_limiter_for_path(path)
 
-            # Break line to fix length
+        try:
+            # Apply rate limiting before making the request
+            await rate_limiter.wait_if_needed()
+
+            # Make the request
             async with session.request(
                 method,
                 url,
@@ -117,27 +164,213 @@ class DMarketClient:
                 params=params,
                 data=body_str,
                 proxy=proxy_url,
-                timeout=aiohttp.ClientTimeout(total=30),  # Use ClientTimeout
+                timeout=aiohttp.ClientTimeout(total=30),
             ) as response:
-                # ... (rest of the try block remains the same)
                 logger.debug(f"Request: {method} {url} | Status: {response.status}")
-                # ... (rest of the try block remains the same)
 
-        except aiohttp.ClientConnectionError as e:
-            # Break line to fix length
-            logger.error(f"DMarket API connection error: {method} {path} - {e}")
+                # Get response body for error handling
+                response_text = await response.text()
+
+                # Try to parse response as JSON
+                response_data = None
+                try:
+                    if response_text:
+                        response_data = json.loads(response_text)
+                except json.JSONDecodeError:
+                    # Not JSON or invalid JSON
+                    pass
+
+                # Handle successful response
+                if 200 <= response.status < 300:
+                    # Mark success for rate limiter and circuit breaker
+                    rate_limiter.mark_success()
+                    if circuit_breaker:
+                        circuit_breaker.record_success()
+
+                    return response_data
+
+                # Handle error responses
+                error = classify_dmarket_error(
+                    status_code=response.status,
+                    response_data=response_data
+                )
+
+                # Handle rate limit errors specially
+                if isinstance(error, DMarketRateLimitError):
+                    retry_after = error.retry_after
+                    await rate_limiter.handle_rate_limit_error(
+                        status_code=response.status,
+                        retry_after=retry_after
+                    )
+
+                # Record failure in circuit breaker
+                if circuit_breaker:
+                    circuit_breaker.record_failure()
+
+                # Retry logic for retryable errors
+                if retry_count < self._max_retries and self._should_retry(error):
+                    retry_count += 1
+                    wait_time = self._calculate_retry_wait_time(retry_count)
+
+                    logger.warning(
+                        f"Retrying request after error: {error}. "
+                        f"Retry {retry_count}/{self._max_retries} in {wait_time:.2f}s"
+                    )
+
+                    await asyncio.sleep(wait_time)
+                    return await self._request(method, path, params, data, retry_count)
+
+                # If we've exhausted retries or it's not retryable, log and return None
+                logger.error(
+                    f"DMarket API error: {error}. "
+                    f"URL: {url}, Method: {method}, Status: {response.status}"
+                )
+                return None
+
+        except (aiohttp.ClientConnectionError, asyncio.TimeoutError) as e:
+            # Network errors are retryable
+            if circuit_breaker:
+                circuit_breaker.record_failure()
+
+            if retry_count < self._max_retries:
+                retry_count += 1
+                wait_time = self._calculate_retry_wait_time(retry_count)
+
+                logger.warning(
+                    f"Network error: {e}. "
+                    f"Retry {retry_count}/{self._max_retries} in {wait_time:.2f}s"
+                )
+
+                await asyncio.sleep(wait_time)
+                return await self._request(method, path, params, data, retry_count)
+
+            logger.error(f"Network error after {self._max_retries} retries: {e}")
             return None
-        except asyncio.TimeoutError:
-            logger.warning(f"DMarket API request timed out: {method} {path}")
-            return None
+
         except Exception as e:
-            # Break line to fix length
-            logger.exception(f"An unexpected error occurred during DMarket API request: {e}")
+            # Unexpected errors
+            logger.exception(f"Unexpected error during DMarket API request: {e}")
+            if circuit_breaker:
+                circuit_breaker.record_failure()
             return None
-        # finally:
-        # Release limiter if it was used
-        # if self._limiter:
-        #     self._limiter.release()
+
+    def _get_rate_limiter_for_path(self, path: str) -> RateLimiter:
+        """
+        Returns the appropriate rate limiter for the given API path.
+
+        Different DMarket API endpoints have different rate limits:
+        - Public endpoints (market items, etc.): 100 requests per minute
+        - Private endpoints (user data, etc.): 60 requests per minute
+        - Trading endpoints (create/edit offers): 30 requests per minute
+
+        Args:
+            path: The API path
+
+        Returns:
+            The appropriate RateLimiter instance
+        """
+        # Use custom rate limiter if provided
+        if self._rate_limiter:
+            return self._rate_limiter
+
+        # Trading endpoints
+        if any(trading_path in path for trading_path in [
+            "/exchange/v1/offers",
+            "/exchange/v1/user/offers",
+            "/exchange/v1/user/inventory",
+        ]):
+            return DMARKET_TRADING_RATE_LIMITER
+
+        # Private endpoints
+        if any(private_path in path for private_path in [
+            "/account/v1/balance",
+            "/exchange/v1/user",
+            "/account/v1/user",
+        ]):
+            return DMARKET_PRIVATE_RATE_LIMITER
+
+        # Default to public rate limiter for all other endpoints
+        return DMARKET_PUBLIC_RATE_LIMITER
+
+    def _get_circuit_breaker_for_path(self, path: str) -> Optional[CircuitBreaker]:
+        """
+        Returns the appropriate circuit breaker for the given API path.
+
+        Args:
+            path: The API path
+
+        Returns:
+            The appropriate CircuitBreaker instance, or None if custom circuit breaker is disabled
+        """
+        # Use custom circuit breaker if provided
+        if self._circuit_breaker:
+            return self._circuit_breaker
+
+        # Trading endpoints
+        if any(trading_path in path for trading_path in [
+            "/exchange/v1/offers",
+            "/exchange/v1/user/offers",
+            "/exchange/v1/user/inventory",
+        ]):
+            return DMARKET_TRADING_CIRCUIT_BREAKER
+
+        # Private endpoints
+        if any(private_path in path for private_path in [
+            "/account/v1/balance",
+            "/exchange/v1/user",
+            "/account/v1/user",
+        ]):
+            return DMARKET_PRIVATE_CIRCUIT_BREAKER
+
+        # Default to public circuit breaker for all other endpoints
+        return DMARKET_PUBLIC_CIRCUIT_BREAKER
+
+    def _should_retry(self, error: DMarketAPIError) -> bool:
+        """
+        Determines if a request should be retried based on the error.
+
+        Args:
+            error: The DMarketAPIError that occurred
+
+        Returns:
+            True if the request should be retried, False otherwise
+        """
+        # Don't retry client errors (except rate limiting which is handled separately)
+        if isinstance(error, DMarketRequestError) or isinstance(error, DMarketAuthError):
+            return False
+
+        # Retry server errors and resource errors
+        if isinstance(error, DMarketServerError) or isinstance(error, DMarketResourceError):
+            return True
+
+        # Retry rate limit errors
+        if isinstance(error, DMarketRateLimitError):
+            return True
+
+        # Default to not retrying unknown errors
+        return False
+
+    def _calculate_retry_wait_time(self, retry_count: int) -> float:
+        """
+        Calculates the wait time for a retry using exponential backoff with jitter.
+
+        Args:
+            retry_count: The current retry attempt (1-based)
+
+        Returns:
+            The wait time in seconds
+        """
+        # Base wait time with exponential backoff: 2^(retry_count - 1)
+        base_wait_time = 2 ** (retry_count - 1)
+
+        # Add jitter (random value between 0 and 1)
+        jitter = random.random()
+
+        # Combine base wait time and jitter
+        wait_time = base_wait_time + jitter
+
+        # Cap at 30 seconds
+        return min(wait_time, 30.0)
 
     async def get_market_items(
         self,

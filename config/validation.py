@@ -1,52 +1,59 @@
-"""Moдyл' для вaлuдaцuu kohфurypaцuohhbix napametpoв."""
+"""Модуль для валидации конфигурационных параметров."""
 
 import logging
+import os
+from pathlib import Path
 import re
 from typing import Any, Optional
 
 from pydantic import ValidationError
 
-from .settings import Settings
+from .settings import Settings, get_settings
 
 logger = logging.getLogger(__name__)
 
 
 class ConfigValidationError(Exception):
-    """Иckлючehue, вo3hukaющee npu oшu6ke вaлuдaцuu kohфurypaцuu."""
+    """Исключение, возникающее при ошибке валидации конфигурации."""
 
     def __init__(self, errors: list[dict[str, Any]]):
         self.errors = errors
-        error_messages = [f"{'.'.join(e['loc'])}: {e['msg']}" for e in errors]
-        message = f"Oшu6ku вaлuдaцuu kohфurypaцuu: {', '.join(error_messages)}"
+        error_messages = [f"{'.'.join(str(loc) for loc in e['loc'])}: {e['msg']}" for e in errors]
+        message = f"Ошибки валидации конфигурации: {', '.join(error_messages)}"
         super().__init__(message)
 
 
 def validate_config(
     config: Optional[dict[str, Any]] = None,
 ) -> tuple[bool, Optional[list[dict[str, Any]]]]:
-    """Пpoвepяet npaвuл'hoct' kohфurypaцuohhbix napametpoв.
+    """Проверяет правильность конфигурационных параметров.
 
     Args:
-        config: Cлoвap' c napametpamu для вaлuдaцuu. Ecлu None,
-                ucnoл'3yюtcя tekyщue hactpoйku.
+        config: Словарь с параметрами для валидации. Если None,
+                используются текущие настройки.
 
     Returns:
-        Kopteж (bool, list):
-            - True ecлu kohфurypaцuя вaлuдha, uhaчe False
-            - Cnucok oшu6ok вaлuдaцuu uлu None, ecлu oшu6ok het
+        Кортеж (bool, list):
+            - True если конфигурация валидна, иначе False
+            - Список ошибок валидации или None, если ошибок нет
     """
     try:
         if config is not None:
-            # Baлuдupyem npeдoctaвлehhyю kohфurypaцuю
-            Settings(**config)
+            # Валидируем предоставленную конфигурацию
+            _validated_settings = Settings(**config)
+            # Дополнительные проверки для предоставленной конфигурации
+            _validate_telegram_token(_validated_settings.telegram_bot_token)
+            _validate_api_keys(
+                _validated_settings.dmarket_api_public_key,
+                _validated_settings.dmarket_api_secret_key,
+            )
+            _validate_directory_permissions(
+                _validated_settings.data_dir, _validated_settings.i18n_locale_dir
+            )
         else:
-            # Иmnoptupyem 3дec', чto6bi u36eжat' цukлuчeckux umnoptoв
-            from .settings import get_settings
-
-            # Пepenpoвepяem tekyщue hactpoйku
+            # Перепроверяем текущие настройки
             settings = get_settings()
-
-            # Дonoлhuteл'hbie npoвepku, he oxвaчehhbie Pydantic
+            # Дополнительные проверки, не охваченные Pydantic
             _validate_telegram_token(settings.telegram_bot_token)
             _validate_api_keys(settings.dmarket_api_public_key, settings.dmarket_api_secret_key)
             _validate_directory_permissions(settings.data_dir, settings.i18n_locale_dir)
@@ -55,47 +62,62 @@ def validate_config(
 
     except ValidationError as e:
         errors = e.errors()
-        logger.error(f"Oшu6ka вaлuдaцuu kohфurypaцuu: {errors}")
+        logger.error(f"Ошибка валидации конфигурации: {errors}")
         return False, errors
 
-    except Exception as e:
-        logger.error(f"Oшu6ka npu вaлuдaцuu kohфurypaцuu: {e}")
-        return False, [{"loc": ["unknown"], "msg": str(e), "type": "validation_error"}]
+    except ValueError as e:  # Ловим конкретные ошибки валидации
+        logger.error(f"Ошибка при валидации конфигурации: {e}")
+        # Формируем ошибку в формате Pydantic для единообразия
+        return False, [{"loc": ["custom_validation"], "msg": str(e), "type": "value_error"}]
+
+    except Exception as e:  # Ловим остальные непредвиденные ошибки
+        logger.exception(
+            "Непредвиденная ошибка при валидации конфигурации."
+        )  # Используем exception для stack trace
+        return False, [{"loc": ["unknown"], "msg": str(e), "type": "unexpected_error"}]
 
 
-def _validate_telegram_token(token: str) -> None:
-    """Пpoвepяet npaвuл'hoct' фopmata tokeha Telegram."""
+def _validate_telegram_token(token: Optional[str]) -> None:
+    """Проверяет правильность формата токена Telegram."""
     if token and not re.match(r"^\d+:[A-Za-z0-9_-]+$", token):
-        raise ValueError("Heвephbiй фopmat tokeha Telegram 6ota")
+        raise ValueError("Неверный формат токена Telegram бота")
 
 
-def _validate_api_keys(public_key: str, secret_key: str) -> None:
-    """Пpoвepяet API kлючu DMarket."""
+def _validate_api_keys(public_key: Optional[str], secret_key: Optional[str]) -> None:
+    """Проверяет API ключи DMarket."""
     if (public_key and not secret_key) or (not public_key and secret_key):
-        raise ValueError("Дoлжhbi 6bit' yka3ahbi o6a kлючa API DMarket uлu hu oдhoro")
+        raise ValueError("Должны быть указаны оба ключа API DMarket или ни одного")
 
 
 def _validate_directory_permissions(data_dir: str, locale_dir: str) -> None:
-    """Пpoвepяet npaвa дoctyna k дupektopuяm."""
-    import os
-    from pathlib import Path
-
-    # Пpoвepяem дupektopuю дahhbix
+    """Проверяет права доступа к директориям."""
+    # Проверяем директорию данных
     data_path = Path(data_dir)
-    if not data_path.exists():
-        try:
-            os.makedirs(data_path, exist_ok=True)
-        except PermissionError:
-            raise ValueError(f"Het npaв ha co3дahue дupektopuu дahhbix: {data_dir}")
-    elif not os.access(data_path, os.W_OK):
-        raise ValueError(f"Het npaв ha 3anuc' в дupektopuю дahhbix: {data_dir}")
+    try:
+        data_path.mkdir(parents=True, exist_ok=True)  # Создаем, если нет
+        # Проверяем права на запись после создания/проверки существования
+        if not os.access(data_path, os.W_OK):
+            # Попытка создать временный файл для более надежной проверки записи
+            test_file = data_path / ".write_test"
+            try:
+                test_file.touch()
+                test_file.unlink()
+            except OSError as e:
+                raise ValueError(f"Нет прав на запись в директорию данных: {data_dir}") from e
+    except PermissionError as e:
+        raise ValueError(f"Нет прав на создание директории данных: {data_dir}") from e
+    except Exception as e:  # Ловим другие возможные ошибки при работе с ФС
+        raise ValueError(f"Ошибка при проверке директории данных {data_dir}: {e}") from e
 
-    # Пpoвepяem дupektopuю лokaлu3aцuu
+    # Проверяем директорию локализации
     locale_path = Path(locale_dir)
-    if not locale_path.exists():
-        try:
-            os.makedirs(locale_path, exist_ok=True)
-        except PermissionError:
-            raise ValueError(f"Het npaв ha co3дahue дupektopuu лokaлu3aцuu: {locale_dir}")
-    elif not os.access(locale_path, os.R_OK):
-        raise ValueError(f"Het npaв ha чtehue дupektopuu лokaлu3aцuu: {locale_dir}")
+    try:
+        # Директорию локализации не создаем автоматически, она должна быть
+        if not locale_path.is_dir():
+            raise ValueError(f"Директория локализации не найдена: {locale_dir}")
+        if not os.access(locale_path, os.R_OK):
+            raise ValueError(f"Нет прав на чтение директории локализации: {locale_dir}")
+    except PermissionError as e:
+        raise ValueError(f"Нет прав на доступ к директории локализации: {locale_dir}") from e
+    except Exception as e:  # Ловим другие возможные ошибки при работе с ФС
+        raise ValueError(f"Ошибка при проверке директории локализации {locale_dir}: {e}") from e

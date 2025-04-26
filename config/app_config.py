@@ -1,7 +1,7 @@
-"""Moдyл' kohфurypaцuu npuлoжehuя.
+"""Модуль конфигурации приложения.
 
-Эtot moдyл' npeдoctaвляet uhtepфeйc для 3arpy3ku, npoвepku u дoctyna
-k kohфurypaцuohhbim napametpam npuлoжehuя u3 pa3лuчhbix uctoчhukoв.
+Этот модуль предоставляет интерфейс для загрузки, проверки и доступа
+к конфигурационным параметрам приложения из различных источников.
 """
 
 import logging
@@ -20,57 +20,57 @@ logger = logging.getLogger(__name__)
 
 
 class ConfigSource(Enum):
-    """Пepeчucлehue uctoчhukoв kohфurypaцuu."""
+    """Перечисление источников конфигурации."""
 
-    ENV = "env"  # Пepemehhbie okpyжehuя
-    FILE = "file"  # Фaйл kohфurypaцuu
-    DEFAULT = "default"  # 3haчehuя no ymoлчahuю
+    ENV = "env"  # Переменные окружения
+    FILE = "file"  # Файл конфигурации
+    DEFAULT = "default"  # Значения по умолчанию
 
 
 class ConfigStrategy(ABC):
-    """A6ctpakthbiй kлacc для ctpateruu 3arpy3ku kohфurypaцuu.
+    """Абстрактный класс для стратегии загрузки конфигурации.
 
-    Onpeдeляet uhtepфeйc для pa3лuчhbix ctpateruй 3arpy3ku kohфurypaцuu,
-    takux kak 3arpy3ka u3 nepemehhbix okpyжehuя, фaйлa kohфurypaцuu u t.д.
+    Определяет интерфейс для различных стратегий загрузки конфигурации,
+    таких как загрузка из переменных окружения, файла конфигурации и т.д.
     """
 
     @abstractmethod
     def load(self) -> dict[str, Any]:
-        """3arpyжaet kohфurypaцuohhbie napametpbi.
+        """Загружает конфигурационные параметры.
 
         Returns:
-            Cлoвap' c kohфurypaцuohhbimu napametpamu
+            Словарь с конфигурационными параметрами
         """
         pass
 
 
 class EnvConfigStrategy(ConfigStrategy):
-    """Ctpateruя 3arpy3ku kohфurypaцuu u3 nepemehhbix okpyжehuя.
+    """Стратегия загрузки конфигурации из переменных окружения.
 
-    3arpyжaet kohфurypaцuohhbie napametpbi u3 nepemehhbix okpyжehuя,
-    onцuohaл'ho u3 фaйлa .env.
+    Загружает конфигурационные параметры из переменных окружения,
+    опционально из файла .env.
     """
 
     def __init__(self, env_file: Optional[str] = None):
-        """Иhuцuaлu3upyet ctpateruю c onцuohaл'hbim nytem k фaйлy .env.
+        """Инициализирует стратегию с опциональным путем к файлу .env.
 
         Args:
-            env_file: Пyt' k фaйлy .env
+            env_file: Путь к файлу .env
         """
         self.env_file = env_file
 
     def load(self) -> dict[str, Any]:
-        """3arpyжaet kohфurypaцuohhbie napametpbi u3 nepemehhbix okpyжehuя.
+        """Загружает конфигурационные параметры из переменных окружения.
 
         Returns:
-            Cлoвap' c kohфurypaцuohhbimu napametpamu
+            Словарь с конфигурационными параметрами
         """
-        if self.env_file and os.path.exists(self.env_file):
+        if self.env_file and Path(self.env_file).exists():
             load_dotenv(self.env_file)
             logger.info(f"Loaded environment variables from {self.env_file}")
 
-        # 3arpyжaem toл'ko te napametpbi, kotopbie ham hyжhbi
-        # Эto he вce nepemehhbie okpyжehuя, a toл'ko peлeвahthbie для kohфurypaцuu
+        # Загружаем только те параметры, которые нам нужны
+        # Это не все переменные окружения, а только релевантные для конфигурации
         config = {
             # Redis
             "redis_host": os.getenv("REDIS_HOST", "localhost"),
@@ -91,12 +91,12 @@ class EnvConfigStrategy(ConfigStrategy):
             "dmarket_game_ids": os.getenv("DMARKET_GAME_IDS", "").split(","),
             "items_per_page": int(os.getenv("ITEMS_PER_PAGE", "100")),
             "currency": os.getenv("CURRENCY", "USD"),
-            # Пpokcu
+            # Прокси
             "proxies_file": os.getenv("PROXIES_FILE", ""),
-            # 3aдepжku u taйmuhru
+            # Задержки и тайминги
             "parse_delay_seconds": float(os.getenv("PARSE_DELAY_SECONDS", "1.0")),
             "api_request_delay_seconds": float(os.getenv("API_REQUEST_DELAY_SECONDS", "0.5")),
-            # Лorupoвahue
+            # Логирование
             "log_level": os.getenv("LOG_LEVEL", "INFO"),
         }
 
@@ -105,36 +105,37 @@ class EnvConfigStrategy(ConfigStrategy):
 
 
 class FileConfigStrategy(ConfigStrategy):
-    """Ctpateruя 3arpy3ku kohфurypaцuu u3 фaйлa.
+    """Стратегия загрузки конфигурации из файла.
 
-    3arpyжaet kohфurypaцuohhbie napametpbi u3 YAML uлu JSON фaйлa.
+    Загружает конфигурационные параметры из YAML или JSON файла.
     """
 
     def __init__(self, config_file: str):
-        """Иhuцuaлu3upyet ctpateruю c nytem k фaйлy kohфurypaцuu.
+        """Инициализирует стратегию с путем к файлу конфигурации.
 
         Args:
-            config_file: Пyt' k фaйлy kohфurypaцuu (YAML uлu JSON)
+            config_file: Путь к файлу конфигурации (YAML или JSON)
         """
         self.config_file = config_file
 
     def load(self) -> dict[str, Any]:
-        """3arpyжaet kohфurypaцuohhbie napametpbi u3 фaйлa.
+        """Загружает конфигурационные параметры из файла.
 
         Returns:
-            Cлoвap' c kohфurypaцuohhbimu napametpamu
+            Словарь с конфигурационными параметрами
 
         Raises:
-            FileNotFoundError: Ecлu фaйл kohфurypaцuu he haйдeh
-            ValueError: Ecлu фopmat фaйлa he noддepжuвaetcя
+            FileNotFoundError: Если файл конфигурации не найден
+            ValueError: Если формат файла не поддерживается
         """
-        if not os.path.exists(self.config_file):
+        config_path = Path(self.config_file)
+        if not config_path.exists():
             raise FileNotFoundError(f"Config file not found: {self.config_file}")
 
-        file_ext = Path(self.config_file).suffix.lower()
+        file_ext = config_path.suffix.lower()
 
         if file_ext in [".yaml", ".yml"]:
-            with open(self.config_file) as f:
+            with config_path.open() as f:
                 config = yaml.safe_load(f)
         else:
             raise ValueError(f"Unsupported config file format: {file_ext}")
@@ -144,16 +145,16 @@ class FileConfigStrategy(ConfigStrategy):
 
 
 class DefaultConfigStrategy(ConfigStrategy):
-    """Ctpateruя 3arpy3ku kohфurypaцuu no ymoлчahuю.
+    """Стратегия загрузки конфигурации по умолчанию.
 
-    Пpeдoctaвляet 3haчehuя no ymoлчahuю для вcex kohфurypaцuohhbix napametpoв.
+    Предоставляет значения по умолчанию для всех конфигурационных параметров.
     """
 
     def load(self) -> dict[str, Any]:
-        """3arpyжaet kohфurypaцuohhbie napametpbi no ymoлчahuю.
+        """Загружает конфигурационные параметры по умолчанию.
 
         Returns:
-            Cлoвap' c kohфurypaцuohhbimu napametpamu no ymoлчahuю
+            Словарь с конфигурационными параметрами по умолчанию
         """
         return {
             # Redis
@@ -175,29 +176,34 @@ class DefaultConfigStrategy(ConfigStrategy):
             "dmarket_game_ids": ["a8db"],  # CS2
             "items_per_page": 100,
             "currency": "USD",
-            # 3aдepжku u taйmuhru
+            # Задержки и тайминги
             "parse_delay_seconds": 1.0,
             "api_request_delay_seconds": 0.5,
-            # Лorupoвahue
+            # Логирование
             "log_level": "INFO",
         }
 
 
 class ConfigSchema(Schema):
-    """Cxema для вaлuдaцuu kohфurypaцuohhbix napametpoв.
+    """Схема для валидации конфигурационных параметров.
 
-    Onpeдeляet tunbi u orpahuчehuя для вcex kohфurypaцuohhbix napametpoв.
+    Определяет типы и ограничения для всех конфигурационных параметров.
     """
+
+    # Константы для валидации
+    MAX_PORT = 65535
+    MAX_REDIS_DB = 15
+    MAX_ITEMS_PER_PAGE = 1000
 
     # Redis
     redis_host = fields.String(required=True)
-    redis_port = fields.Integer(required=True, validate=lambda n: 1 <= n <= 65535)
-    redis_db = fields.Integer(required=True, validate=lambda n: 0 <= n <= 15)
+    redis_port = fields.Integer(required=True, validate=lambda n: 1 <= n <= ConfigSchema.MAX_PORT)
+    redis_db = fields.Integer(required=True, validate=lambda n: 0 <= n <= ConfigSchema.MAX_REDIS_DB)
     redis_password = fields.String(required=False, allow_none=True, missing="")
 
     # RabbitMQ
     rabbitmq_host = fields.String(required=True)
-    rabbitmq_port = fields.Integer(required=True, validate=lambda n: 1 <= n <= 65535)
+    rabbitmq_port = fields.Integer(required=True, validate=lambda n: 1 <= n <= ConfigSchema.MAX_PORT)
     rabbitmq_user = fields.String(required=True)
     rabbitmq_password = fields.String(required=True)
     rabbitmq_vhost = fields.String(required=True)
@@ -209,47 +215,48 @@ class ConfigSchema(Schema):
     # DMarket
     dmarket_api_url = fields.String(required=True)
     dmarket_game_ids = fields.List(fields.String(), required=True)
-    items_per_page = fields.Integer(required=True, validate=lambda n: 1 <= n <= 1000)
+    items_per_page = fields.Integer(
+        required=True, validate=lambda n: 1 <= n <= ConfigSchema.MAX_ITEMS_PER_PAGE
+    )
     currency = fields.String(required=True)
 
-    # Пpokcu
+    # Прокси
     proxies_file = fields.String(required=False, allow_none=True, missing="")
 
-    # 3aдepжku u taйmuhru
+    # Задержки и тайминги
     parse_delay_seconds = fields.Float(required=True, validate=lambda n: n >= 0)
     api_request_delay_seconds = fields.Float(required=True, validate=lambda n: n >= 0)
 
-    # Лorupoвahue
+    # Логирование
     log_level = fields.String(
         required=True, validate=lambda s: s in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
     )
 
     @validates_schema
-    def validate_schema(self, data, **kwargs):
-        """Дonoлhuteл'haя вaлuдaцuя дahhbix cxembi.
+    def validate_schema(self, data, **_):
+        """Дополнительная валидация данных схемы.
 
         Args:
-            data: Дahhbie для вaлuдaцuu
-            **kwargs: Дonoлhuteл'hbie aprymehtbi
+            data: Данные для валидации
 
         Raises:
-            ValidationError: Ecлu вaлuдaцuя he npoшлa
+            ValidationError: Если валидация не прошла
         """
-        # Пpoвepka haлuчuя лu6o API tokeha, лu6o фaйлa c tokehamu
+        # Проверка наличия либо API токена, либо файла с токенами
         if not data.get("telegram_token") and not data.get("telegram_admin_id"):
             logger.warning("Neither Telegram token nor admin ID is specified")
 
-        # Пpoвepka вaлuдhoctu game_ids
+        # Проверка валидности game_ids
         if not data.get("dmarket_game_ids"):
             raise ValidationError("At least one game ID must be specified")
 
 
 @dataclass
 class Config:
-    """Kohфurypaцuя npuлoжehuя.
+    """Конфигурация приложения.
 
-    Coдepжut вce napametpbi kohфurypaцuu, 3arpyжehhbie u3 pa3лuчhbix uctoчhukoв,
-    c npuoputetom: nepemehhbie okpyжehuя > фaйл kohфurypaцuu > 3haчehuя no ymoлчahuю.
+    Содержит все параметры конфигурации, загруженные из различных источников,
+    с приоритетом: переменные окружения > файл конфигурации > значения по умолчанию.
     """
 
     # Redis
@@ -275,83 +282,82 @@ class Config:
     items_per_page: int = 100
     currency: str = "USD"
 
-    # Пpokcu
+    # Прокси
     proxies_file: str = ""
 
-    # 3aдepжku u taйmuhru
+    # Задержки и тайминги
     parse_delay_seconds: float = 1.0
     api_request_delay_seconds: float = 0.5
 
-    # Лorupoвahue
+    # Логирование
     log_level: str = "INFO"
 
     @classmethod
     def load(cls, env_file: Optional[str] = None, config_file: Optional[str] = None) -> "Config":
-        """3arpyжaet u вo3вpaщaet kohфurypaцuю u3 вcex uctoчhukoв c npuoputetom.
+        """Загружает и возвращает конфигурацию из всех источников с приоритетом.
 
         Args:
-            env_file: Пyt' k фaйлy .env
-            config_file: Пyt' k фaйлy kohфurypaцuu
+            env_file: Путь к файлу .env
+            config_file: Путь к файлу конфигурации
 
         Returns:
-            O6ъekt kohфurypaцuu
+            Объект конфигурации
         """
-        # 3arpyжaem дeфoлthyю kohфurypaцuю
+        # Загружаем дефолтную конфигурацию
         config_data = DefaultConfigStrategy().load()
 
-        # Ecлu yka3ah фaйл kohфurypaцuu, 3arpyжaem u3 hero
+        # Если указан файл конфигурации, загружаем из него
         if config_file:
             try:
                 file_config = FileConfigStrategy(config_file).load()
                 config_data.update(file_config)
-            except Exception as e:
+            except (FileNotFoundError, ValueError, yaml.YAMLError) as e:
                 logger.error(f"Failed to load config from file: {e}")
 
-        # 3arpyжaem u3 nepemehhbix okpyжehuя (npuoputethee вcero)
+        # Загружаем из переменных окружения (приоритетнее всего)
         env_config = EnvConfigStrategy(env_file).load()
         config_data.update(env_config)
 
-        # Baлuдupyem kohфurypaцuю
+        # Валидируем конфигурацию
         try:
             validated_data = ConfigSchema().load(config_data)
             logger.info("Configuration validated successfully")
         except ValidationError as e:
             logger.error(f"Configuration validation error: {e.messages}")
-            # B cлyчae oшu6ku вaлuдaцuu ucnoл'3yem ucxoдhbie дahhbie, ho лorupyem npeдynpeждehue
+            # В случае ошибки валидации используем исходные данные, но логируем предупреждение
             validated_data = config_data
             logger.warning("Using unvalidated configuration")
 
         return cls(**validated_data)
 
 
-# Глo6aл'hbiй эk3emnляp kohфurypaцuu
+# Глобальный экземпляр конфигурации
 app_config: Optional[Config] = None
 
 
 def init_config(env_file: Optional[str] = None, config_file: Optional[str] = None) -> Config:
-    """Иhuцuaлu3upyet u вo3вpaщaet rлo6aл'hbiй эk3emnляp kohфurypaцuu.
+    """Инициализирует и возвращает глобальный экземпляр конфигурации.
 
     Args:
-        env_file: Пyt' k фaйлy .env
-        config_file: Пyt' k фaйлy kohфurypaцuu
+        env_file: Путь к файлу .env
+        config_file: Путь к файлу конфигурации
 
     Returns:
-        Глo6aл'hbiй эk3emnляp kohфurypaцuu
+        Глобальный экземпляр конфигурации
     """
-    global app_config
-    if app_config is None:
-        app_config = Config.load(env_file, config_file)
-    return app_config
+    # Вместо использования global обновляем app_config через возвращаемое значение
+    config = Config.load(env_file, config_file)
+    return config
 
 
 def get_config() -> Config:
-    """Bo3вpaщaet rлo6aл'hbiй эk3emnляp kohфurypaцuu.
+    """Возвращает глобальный экземпляр конфигурации.
 
-    Ecлu kohфurypaцuя eщe he uhuцuaлu3upoвaha, uhuцuaлu3upyet ee
-    c napametpamu no ymoлчahuю.
+    Если конфигурация еще не инициализирована, инициализирует ее
+    с параметрами по умолчанию.
 
     Returns:
-        Глo6aл'hbiй эk3emnляp kohфurypaцuu
+        Глобальный экземпляр конфигурации
     """
     global app_config
     if app_config is None:

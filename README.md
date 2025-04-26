@@ -1,133 +1,134 @@
-# DMarket Price Monitoring Bot
+# Мониторинг цен DMarket с Telegram-ботом
 
-Sistema monitoringa cen na DMarket s integraciej Telegram-bota dlya uvedomlenij i vzaimodejstviya s pol'zovatelyami. Postroena na asinhronnom programmirovanii s ispol'zovaniem Python i sovremennyh tehnologij.
+Система мониторинга цен на DMarket с интеграцией Telegram-бота для уведомлений и взаимодействия с пользователями. Построена на асинхронном программировании с использованием Python и современных технологий.
 
-## Osnovnye vozmozhnosti
+## Основные возможности
 
-- **Podderzhka proksi**: HTTP, SOCKS4, SOCKS5 dlya povysheniya konfidencial'nosti i obhoda ogranichenij
-- **Asinhronnaya arhitektura**: Postroena na asyncio i uvloop dlya vysokoj proizvoditel'nosti
-- **Ustojchivost'**: Polnaya obrabotka oshibok i ispol'zovanie patterna Circuit Breaker
-- **Bezopasnost'**: Validaciya dannyh, zashchita konfidencial'noj informacii
-- **Paketnaya obrabotka**: Effektivnaya rabota s bol'shimi ob'emami dannyh
-- **Testirovanie**: Vysokoe pokrytie unit-testami
-- **Optimizaciya**: Ustraneny osnovnye uzkie mesta proizvoditel'nosti
-- **CI/CD**: Prostoj konvejer nepreryvnoj integracii
-- **Trassirovka**: Ispol'zovanie Zipkin dlya nekotoryh funkcij
-- **Ogranichenie skorosti**: Adaptivnye strategii s eksponencial'noj zaderzhkoj
-- **Media v Telegram**: Uvedomleniya s izobrazheniyami, video i animaciej
-- **Interaktivnyj interfejs**: Ispol'zovanie inline-klaviatur v Telegram
-- **Monitoring**: Sistema proverki sostoyaniya i sbora metrik
+- **Поддержка прокси**: HTTP, SOCKS4, SOCKS5 для повышения конфиденциальности и обхода ограничений
+- **Асинхронная архитектура**: Построена на asyncio и uvloop для высокой производительности
+- **Устойчивость**: Полная обработка ошибок и использование паттерна Circuit Breaker
+- **Безопасность**: Валидация данных, защита конфиденциальной информации
+- **Пакетная обработка**: Эффективная работа с большими объемами данных
+- **Тестирование**: Высокое покрытие unit-тестами
+- **Оптимизация**: Устранены основные узкие места производительности
+- **CI/CD**: Простой конвейер непрерывной интеграции
+- **Трассировка**: Использование Zipkin для некоторых функций
+- **Ограничение скорости**: Адаптивные стратегии с экспоненциальной задержкой
+- **Медиа в Telegram**: Уведомления с изображениями, видео и анимацией
+- **Интерактивный интерфейс**: Использование inline-клавиатур в Telegram
+- **Мониторинг**: Система проверки состояния и сбора метрик
 
-## Tekhnicheskij stek
+## Технический стек
 
-- **Yazyk programmirovaniya**: Python 3.11+
-- **Upravlenie zavisimostyami**: Poetry
-- **Asinhronnyj frejmvork**: Asyncio
-- **Kontejnerizaciya**: Docker, Docker Compose
-- **Hranilishche dannyh**: Redis
-- **Ocheredi soobshchenij**: RabbitMQ
-- **Telegram-bot**: aiogram 3.x
-- **Testirovanie**: pytest s podderzhkoj asyncio
-- **Kontrol' kachestva koda**: Black, Ruff, Pylint, Mypy
-- **Logirovanie**: Strukturirovannoe logirovanie s JSON
-- **HTTP-klient**: aiohttp
-- **Trassirovka**: Zipkin
-- **Serializaciya dannyh**: dataclasses-json, marshmallow
+- **Язык программирования**: Python 3.11
+- **Асинхронное программирование**: Asyncio
+- **Управление зависимостями**: Poetry
+- **Контейнеризация**: Docker, Docker Compose
+- **Хранилище данных**: Redis (aioredis==2.0.0)
+- **Очереди сообщений**: RabbitMQ (aio-pika==9.4.1)
+- **Telegram-бот**: aiogram>=3.0.0
+- **Тестирование**: Pytest с поддержкой asyncio (pytest>=8.3.5, pytest-asyncio>=0.26.0)
+- **Контроль качества кода**: Black (line-length=100), Ruff, Pylint, Mypy, Pylance
+- **Логирование**: Структурированное логирование с JSON
+- **HTTP-клиент**: aiohttp
+- **Трассировка**: Zipkin
+- **Сериализация данных**: dataclasses-json, marshmallow
 
-## Ustanovka i zapusk
+## Установка и запуск
 
-### Ispol'zuya Poetry (rekomenduetsya)
+### Используя Poetry (рекомендуется)
 
-1. Klonirujte repozitorij:
+1. Клонируйте репозиторий:
    ```bash
    git clone https://github.com/yourusername/dmarket_telegram_bot.git
    cd dmarket_telegram_bot
    ```
 
-2. Ustanovite Poetry (esli ne ustanovlen):
+2. Установите Poetry (если не установлен):
    ```bash
    curl -sSL https://install.python-poetry.org | python3 -
    ```
 
-3. Ustanovite zavisimosti:
+3. Установите зависимости:
    ```bash
    poetry install
    ```
 
-4. Nastrojte peremennye okruzheniya:
+4. Настройте переменные окружения:
    ```bash
    cp dmarket_parser.dev.env .env
-   # Otredaktirujte .env fajl, dobaviv svoi nastrojki
+   # Отредактируйте .env файл, добавив свои настройки
    ```
 
-5. Zapustite prilozhenie:
+5. Запустите приложение:
    ```bash
    poetry run start
    ```
 
-6. Zapustite obrabotchik dlya analiza dannyh:
+6. Запустите обработчик для анализа данных:
    ```bash
    poetry run worker
    ```
 
-### Ispol'zuya Docker
+### Используя Docker
 
-1. Klonirujte repozitorij:
+1. Клонируйте репозиторий:
    ```bash
    git clone https://github.com/yourusername/dmarket_telegram_bot.git
    cd dmarket_telegram_bot
    ```
 
-2. Nastrojte peremennye okruzheniya v docker-compose.yml ili env-fajlah
+2. Настройте переменные окружения в docker-compose.yml или env-файлах
 
-3. Zapustite s Docker Compose:
+3. Запустите с Docker Compose:
    ```bash
    docker-compose up -d
+
+   # Отредактируйте .env файл, добавив свои настройки
+   # (например, токен Telegram-бота, ID пользователей)
+
+   # Запустите бота
    ```
 
-## Konfiguraciya
+## Конфигурация
 
-### Nastrojka Telegram-bota
+### Настройка Telegram-бота
 
-1. Poluchite token dlya bota cherez @BotFather v Telegram
-2. Nastrojte token i drugie parametry v fajle .env:
-   ```
-   TELEGRAM_API_TOKEN=vash_token
-   TELEGRAM_WHITELIST=ID1,ID2
-   ```
+1.  **Создайте бота**: Используйте BotFather в Telegram для создания нового бота и получения токена.
+2.  **Настройте `.env`**: Скопируйте `example.env` в `.env` и заполните переменные:
+    *   `TELEGRAM_BOT_TOKEN`: Токен вашего бота.
+    *   `TELEGRAM_ADMIN_IDS`: Список ID администраторов через запятую.
+    *   Другие переменные окружения (Redis, RabbitMQ, прокси и т.д.).
 
-### Nastrojka proksi
+### Настройка прокси
 
-Dobav'te proksi v fajl `utils_mount/dmarket_proxies.txt` v formate:
-```
-http://user:pass@host:port
-socks5://host:port
-```
+1.  **Создайте файл `utils_mount/dmarket_proxies.txt`**: Добавьте список прокси в формате `protocol://user:password@host:port` (по одному на строку).
+2.  **Укажите путь к файлу**: Убедитесь, что переменная окружения `PROXY_FILE_PATH` в `.env` указывает на этот файл (например, `PROXY_FILE_PATH=utils_mount/dmarket_proxies.txt`).
 
-## Apxutektypa
+## Архитектура
 
-Cuctema coctout u3 cлeдyющux komnohehtoв:
+Система состоит из следующих компонентов:
 
-- **DMarket Parser**: И3влekaet дahhbie u3 API DMarket u otnpaвляet ux в oчepeд' RabbitMQ
-- **Worker**: O6pa6atbiвaet дahhbie u3 oчepeдu u coxpahяet pe3yл'tatbi в Redis
-- **Redis**: Xpahut дahhbie o цehax c metaдahhbimu
-- **Telegram Bot**: Пoлyчaet дahhbie u3 Redis u в3aumoдeйctвyet c noл'3oвateляmu
+- **DMarket Parser**: Извлекает данные из API DMarket и отправляет их в очередь RabbitMQ
+- **Worker**: Обрабатывает данные из очереди и сохраняет результаты в Redis
+- **Redis**: Хранит данные о ценах с метаданными
+- **Telegram Bot**: Получает данные из Redis и взаимодействует с пользователями
 
-## Pa3pa6otka
+## Разработка
 
-### O6hoвлehue 3aвucumocteй
+### Обновление зависимостей
 
 ```bash
 python scripts/update_dependencies.py
 ```
 
-### 3anyck tectoв
+### Запуск тестов
 
 ```bash
 poetry run pytest
 ```
 
-### Фopmatupoвahue u npoвepka koдa
+### Форматирование и проверка кода
 
 ```bash
 poetry run black .
@@ -135,16 +136,16 @@ poetry run ruff check --fix .
 poetry run mypy .
 ```
 
-## Mohutopuhr u ha6людehue
+## Мониторинг и наблюдение
 
-- **Пpoвepka coctoяhuя**: Mohutopuhr Redis, RabbitMQ u API DMarket
-- **Metpuku**: C6op дahhbix o npou3вoдuteл'hoctu u 6u3hec-noka3ateляx
-- **Иhterpaцuя**: Пoддepжka Prometheus u Grafana
+- **Проверка состояния**: Мониторинг Redis, RabbitMQ и API DMarket
+- **Метрики**: Сбор данных о производительности и бизнес-показателях
+- **Интеграция**: Поддержка Prometheus и Grafana
 
-## Лuцeh3uя
+## Лицензия
 
 MIT
 
 ---
 
-Pa3pa6otaho c nomoщ'ю Poetry 💙
+Разработано с помощью Poetry 💙

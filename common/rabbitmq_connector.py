@@ -1,5 +1,4 @@
-"""
-RabbitMQ Connector Module
+"""RabbitMQ Connector Module
 
 This module provides a high-level interface for connecting to RabbitMQ and performing
 common operations such as publishing messages, creating publishers and listeners,
@@ -24,7 +23,7 @@ Features:
 import logging
 import ssl
 from datetime import timedelta
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 
 from aio_pika import Channel, DeliveryMode, Message
 from aio_pika.exceptions import AMQPConnectionError, AMQPError
@@ -43,8 +42,7 @@ T = TypeVar("T")
 
 
 class RabbitMQConnector:
-    """
-    A high-level connector for RabbitMQ operations.
+    """A high-level connector for RabbitMQ operations.
 
     This class provides methods for connecting to RabbitMQ, publishing messages,
     creating publishers and listeners, and managing connections and channels.
@@ -82,8 +80,7 @@ class RabbitMQConnector:
         retry_delay: float = 1.0,
         channel_pool_size: int = 10,
     ):
-        """
-        Initialize a new RabbitMQConnector.
+        """Initialize a new RabbitMQConnector.
 
         Args:
             host: The RabbitMQ server hostname or IP address (or comma-separated list for cluster)
@@ -116,8 +113,7 @@ class RabbitMQConnector:
         self.client = None
 
     async def connect(self) -> RabbitMQClient:
-        """
-        Connect to the RabbitMQ server.
+        """Connect to the RabbitMQ server.
 
         This method creates a new RabbitMQClient instance and establishes
         a connection to the RabbitMQ server using the connection parameters
@@ -149,12 +145,11 @@ class RabbitMQConnector:
             logger.info("Successfully connected to RabbitMQ")
             return self.client
         except AMQPConnectionError as e:
-            logger.error(f"Failed to connect to RabbitMQ: {str(e)}")
+            logger.error(f"Failed to connect to RabbitMQ: {e!s}")
             raise
 
     async def get_channel(self) -> Channel:
-        """
-        Get a RabbitMQ channel.
+        """Get a RabbitMQ channel.
 
         This method returns a channel from the current connection.
         If no connection exists, it first establishes a connection.
@@ -173,12 +168,11 @@ class RabbitMQConnector:
             logger.debug("Created new RabbitMQ channel")
             return channel
         except AMQPError as e:
-            logger.error(f"Failed to create RabbitMQ channel: {str(e)}")
+            logger.error(f"Failed to create RabbitMQ channel: {e!s}")
             raise
 
     async def return_channel(self, channel: Channel) -> None:
-        """
-        Return a channel to the pool for reuse.
+        """Return a channel to the pool for reuse.
 
         This method adds a channel back to the pool if it's still open
         and the pool is not full. Otherwise, it closes the channel.
@@ -193,8 +187,7 @@ class RabbitMQConnector:
         await self.client.return_channel(channel)
 
     async def close_channel(self, channel: Channel) -> None:
-        """
-        Close a RabbitMQ channel.
+        """Close a RabbitMQ channel.
 
         This method closes the specified channel if it's open.
 
@@ -207,10 +200,10 @@ class RabbitMQConnector:
         await self.client.close_channel(channel)
 
     async def publish(
-        self, 
-        channel: Channel, 
-        routing_key: str, 
-        body: bytes, 
+        self,
+        channel: Channel,
+        routing_key: str,
+        body: bytes,
         persistent: bool = True,
         content_type: str = "application/octet-stream",
         content_encoding: str = "utf-8",
@@ -220,11 +213,10 @@ class RabbitMQConnector:
         expiration: Optional[Union[int, float, timedelta]] = None,
         message_id: Optional[str] = None,
         timestamp: Optional[int] = None,
-        headers: Optional[Dict[str, Any]] = None,
-        **kwargs
+        headers: Optional[dict[str, Any]] = None,
+        **kwargs,
     ) -> None:
-        """
-        Publish a message to a RabbitMQ queue.
+        """Publish a message to a RabbitMQ queue.
 
         This method creates a message from the provided body and additional parameters,
         then publishes it to the default exchange with the specified routing key.
@@ -271,7 +263,7 @@ class RabbitMQConnector:
                 timestamp=timestamp,
                 headers=headers,
                 delivery_mode=delivery_mode,
-                **kwargs
+                **kwargs,
             )
 
             # Publish the message
@@ -279,7 +271,7 @@ class RabbitMQConnector:
             await channel.default_exchange.publish(message, routing_key=routing_key)
             logger.debug(f"Message published to {routing_key}")
         except AMQPError as e:
-            logger.error(f"Failed to publish message to {routing_key}: {str(e)}")
+            logger.error(f"Failed to publish message to {routing_key}: {e!s}")
             raise
 
     async def create_queue(
@@ -289,15 +281,14 @@ class RabbitMQConnector:
         durable: bool = True,
         exclusive: bool = False,
         auto_delete: bool = False,
-        arguments: Optional[Dict[str, Any]] = None,
+        arguments: Optional[dict[str, Any]] = None,
         message_ttl: Optional[Union[int, timedelta]] = None,
         dead_letter_exchange: Optional[str] = None,
         dead_letter_routing_key: Optional[str] = None,
         max_length: Optional[int] = None,
         max_priority: Optional[int] = None,
     ) -> None:
-        """
-        Create a queue with the specified parameters.
+        """Create a queue with the specified parameters.
 
         This method creates a queue with the specified name and parameters.
         If the queue already exists, it verifies that the existing queue
@@ -358,17 +349,16 @@ class RabbitMQConnector:
             )
             logger.debug(f"Queue {queue_name} created")
         except AMQPError as e:
-            logger.error(f"Failed to create queue {queue_name}: {str(e)}")
+            logger.error(f"Failed to create queue {queue_name}: {e!s}")
             raise
 
     async def create_publisher(
-        self, 
+        self,
         queue_class: type[T],
         passive: bool = False,
         message_ttl: Optional[timedelta] = None,
     ) -> "QueuePublisher[T]":
-        """
-        Create a publisher for the specified queue class.
+        """Create a publisher for the specified queue class.
 
         This method creates a QueuePublisher instance for the specified queue class
         using the QueueFactory. If no connection exists, it first establishes a connection.
@@ -398,18 +388,17 @@ class RabbitMQConnector:
             logger.debug(f"Created publisher for queue {queue_class.queue_name}")
             return publisher
         except AMQPError as e:
-            logger.error(f"Failed to create publisher for queue {queue_class.queue_name}: {str(e)}")
+            logger.error(f"Failed to create publisher for queue {queue_class.queue_name}: {e!s}")
             raise
 
     async def create_listener(
-        self, 
-        queue_class: type[T], 
+        self,
+        queue_class: type[T],
         on_message_callback: Callable,
         passive: bool = False,
         message_ttl: Optional[timedelta] = None,
     ) -> QueueListener:
-        """
-        Create a listener for the specified queue class with a callback for received messages.
+        """Create a listener for the specified queue class with a callback for received messages.
 
         This method creates a QueueListener instance for the specified queue class
         using the QueueFactory. The listener will call the provided callback function
@@ -442,17 +431,16 @@ class RabbitMQConnector:
             logger.debug(f"Created listener for queue {queue_class.queue_name}")
             return listener
         except AMQPError as e:
-            logger.error(f"Failed to create listener for queue {queue_class.queue_name}: {str(e)}")
+            logger.error(f"Failed to create listener for queue {queue_class.queue_name}: {e!s}")
             raise
 
     async def create_reader(
-        self, 
+        self,
         queue_class: type[T],
         passive: bool = False,
         message_ttl: Optional[timedelta] = None,
     ) -> QueueReader:
-        """
-        Create a reader for the specified queue class.
+        """Create a reader for the specified queue class.
 
         This method creates a QueueReader instance for the specified queue class
         using the QueueFactory. If no connection exists, it first establishes a connection.
@@ -482,12 +470,11 @@ class RabbitMQConnector:
             logger.debug(f"Created reader for queue {queue_class.queue_name}")
             return reader
         except AMQPError as e:
-            logger.error(f"Failed to create reader for queue {queue_class.queue_name}: {str(e)}")
+            logger.error(f"Failed to create reader for queue {queue_class.queue_name}: {e!s}")
             raise
 
     async def close(self) -> None:
-        """
-        Close the connection to the RabbitMQ server.
+        """Close the connection to the RabbitMQ server.
 
         This method closes the underlying RabbitMQClient connection
         and sets the client attribute to None. If no connection exists,
@@ -499,6 +486,6 @@ class RabbitMQConnector:
                 await self.client.close()
                 logger.info("RabbitMQ connection closed")
             except AMQPError as e:
-                logger.warning(f"Error closing RabbitMQ connection: {str(e)}")
+                logger.warning(f"Error closing RabbitMQ connection: {e!s}")
             finally:
                 self.client = None

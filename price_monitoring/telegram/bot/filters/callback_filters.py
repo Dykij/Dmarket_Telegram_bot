@@ -1,57 +1,53 @@
-"""Фильтры для callback-запросов в Telegram-боте."""
+"""Фuл'tpbi для callback-3anpocoв в Telegram-6ote."""
 
 from aiogram import types
 
 
 def game_callback_filter(callback: types.CallbackQuery) -> bool:
-    """
-    Фильтр для callback_query с префиксом 'game_'.
-    
+    """Фuл'tp для callback_query c npeфukcom 'game_'.
+
     Args:
-        callback: Callback query от Telegram
-        
+        callback: Callback query ot Telegram
+
     Returns:
-        True если callback_data начинается с 'game_', иначе False
+        True ecлu callback_data haчuhaetcя c 'game_', uhaчe False
     """
     return callback.data is not None and callback.data.startswith("game_")
 
 
 def mode_callback_filter(callback: types.CallbackQuery) -> bool:
-    """
-    Фильтр для callback_query с префиксом 'mode_'.
-    
+    """Фuл'tp для callback_query c npeфukcom 'mode_'.
+
     Args:
-        callback: Callback query от Telegram
-        
+        callback: Callback query ot Telegram
+
     Returns:
-        True если callback_data начинается с 'mode_', иначе False
+        True ecлu callback_data haчuhaetcя c 'mode_', uhaчe False
     """
     return callback.data is not None and callback.data.startswith("mode_")
 
 
 def filter_callback_filter(callback: types.CallbackQuery) -> bool:
-    """
-    Фильтр для callback_query с префиксом 'filter_'.
-    
+    """Фuл'tp для callback_query c npeфukcom 'filter_'.
+
     Args:
-        callback: Callback query от Telegram
-        
+        callback: Callback query ot Telegram
+
     Returns:
-        True если callback_data начинается с 'filter_', иначе False
+        True ecлu callback_data haчuhaetcя c 'filter_', uhaчe False
     """
     return callback.data is not None and callback.data.startswith("filter_")
 
 
 def pagination_callback_filter(callback: types.CallbackQuery) -> bool:
-    """
-    Фильтр для callback_query, связанных с пагинацией.
-    
+    """Фuл'tp для callback_query, cвя3ahhbix c naruhaцueй.
+
     Args:
-        callback: Callback query от Telegram
-        
+        callback: Callback query ot Telegram
+
     Returns:
-        True если callback_data связан с пагинацией, иначе False
+        True ecлu callback_data cвя3ah c naruhaцueй, uhaчe False
     """
-    return (callback.data is not None and 
-            (callback.data.startswith("page_next_") or 
-             callback.data.startswith("page_prev_"))) 
+    return callback.data is not None and (
+        callback.data.startswith("page_next_") or callback.data.startswith("page_prev_")
+    )

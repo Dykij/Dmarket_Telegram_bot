@@ -1,13 +1,7 @@
-import logging
-
-# Закомментировано из-за отсутствия класса DMarketSkinHistogram
+# 3akommehtupoвaho u3-3a otcytctвuя kлacca DMarketSkinHistogram
 # from price_monitoring.models.dmarket import DMarketSkinHistogram
-from price_monitoring.queues.abstract_dmarket_order_queue import (
-    AbstractDmarketOrderReader,
-    AbstractDmarketOrderWriter,
-)
 
-# Закомментировано из-за отсутствия класса DMarketSkinHistogram
+# 3akommehtupoвaho u3-3a otcytctвuя kлacca DMarketSkinHistogram
 # class DmarketOrderReader(AbstractDmarketOrderReader):
 #     def __init__(self, reader):
 #         self._reader = reader

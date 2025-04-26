@@ -1,83 +1,80 @@
-"""
-Модуль содержит классы для валидации данных в системе мониторинга цен.
+"""Module contains classes for data validation in the price monitoring system.
 
-Валидаторы проверяют корректность входных данных, предотвращают ошибки
-и обеспечивают консистентность данных в системе.
+Validators check the correctness of input data, prevent errors,
+and ensure data consistency in the system.
 """
 
 import logging
 import re
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class DmarketDataValidator:
-    """Валидатор для данных, получаемых от DMarket API."""
+    """Validator for data received from the DMarket API."""
 
     @staticmethod
-    def validate_item(item: dict[str, Any]) -> Tuple[bool, Optional[str]]:
-        """
-        Проверяет корректность данных предмета.
+    def validate_item(item: dict[str, Any]) -> tuple[bool, Optional[str]]:
+        """Check the correctness of item data.
 
         Args:
-            item: Словарь с данными предмета
+            item: Dictionary with item data
 
         Returns:
-            Кортеж (успех_валидации, сообщение_об_ошибке)
+            Tuple (validation_success, error_message)
         """
-        # Проверка наличия обязательных полей
+        # Check for required fields
         required_fields = ["title", "game_id", "price"]
         for field in required_fields:
             if field not in item:
-                return False, f"Отсутствует обязательное поле: {field}"
+                return False, f"Missing required field: {field}"
 
-        # Проверка типов данных
+        # Check data types
         if not isinstance(item["title"], str):
-            return False, "Поле 'title' должно быть строкой"
+            return False, "Field 'title' must be a string"
 
         if not isinstance(item["game_id"], str):
-            return False, "Поле 'game_id' должно быть строкой"
+            return False, "Field 'game_id' must be a string"
 
-        # Проверка корректности цены
+        # Check price correctness
         try:
             price = float(item["price"])
             if price < 0:
-                return False, "Цена не может быть отрицательной"
+                return False, "Price cannot be negative"
         except (ValueError, TypeError):
-            return False, "Некорректный формат цены"
+            return False, "Invalid price format"
 
-        # Проверка валюты (если она указана)
+        # Check currency (if specified)
         if "currency" in item and not isinstance(item["currency"], str):
-            return False, "Поле 'currency' должно быть строкой"
+            return False, "Field 'currency' must be a string"
 
         return True, None
 
     @staticmethod
     def validate_items_payload(
         payload: dict[str, Any],
-    ) -> Tuple[bool, Optional[str], List[dict[str, Any]]]:
-        """
-        Проверяет корректность пакета данных с предметами.
+    ) -> tuple[bool, Optional[str], list[dict[str, Any]]]:
+        """Check the correctness of the items data package.
 
-        Примечание: Этот метод подготовлен для использования в будущих версиях
-        системы мониторинга цен при расширении функциональности.
+        Note: This method is prepared for use in future versions
+        of the price monitoring system when expanding functionality.
 
         Args:
-            payload: Пакет данных с предметами
+            payload: Data package with items
 
         Returns:
-            Кортеж (успех_валидации, сообщение_об_ошибке,
-            отфильтрованные_предметы)
+            Tuple (validation_success, error_message,
+            filtered_items)
         """
         if not isinstance(payload, dict):
-            return False, "Payload должен быть словарем", []
+            return False, "Payload must be a dictionary", []
 
         if "items" not in payload:
-            return False, "Отсутствует обязательное поле 'items'", []
+            return False, "Missing required field 'items'", []
 
         if not isinstance(payload["items"], list):
-            return False, "Поле 'items' должно быть списком", []
+            return False, "Field 'items' must be a list", []
 
         valid_items = []
         for index, item in enumerate(payload["items"]):
@@ -85,65 +82,62 @@ class DmarketDataValidator:
             if is_valid:
                 valid_items.append(item)
             else:
-                logger.warning(f"Пропуск некорректного предмета (индекс {index}): {error_message}")
+                logger.warning(f"Skipping invalid item (index {index}): {error_message}")
 
         if not valid_items and payload["items"]:
-            return False, "Ни один из предметов не прошел валидацию", []
+            return False, "None of the items passed validation", []
 
         return True, None, valid_items
 
 
 class SecurityUtils:
-    """
-    Утилиты для обеспечения безопасности данных.
+    """Utilities for ensuring data security.
 
-    Класс предоставляет методы для очистки входных данных от потенциально
-    опасных символов и маскирования конфиденциальной информации в логах.
+    The class provides methods for cleaning input data from potentially
+    dangerous characters and masking confidential information in logs.
 
-    Примечание: Этот класс подготовлен для использования в будущих версиях
-    системы мониторинга цен при расширении функциональности для обеспечения
-    дополнительной безопасности.
+    Note: This class is prepared for use in future versions
+    of the price monitoring system when expanding functionality to provide
+    additional security.
     """
 
     @staticmethod
     def sanitize_string(input_str: str) -> str:
-        """
-        Очищает строку от потенциально опасных символов.
+        """Clean a string from potentially dangerous characters.
 
-        Метод удаляет управляющие и специальные символы, оставляя только
-        безопасные символы для отображения и обработки.
+        The method removes control and special characters, leaving only
+        safe characters for display and processing.
 
         Args:
-            input_str: Входная строка для очистки
+            input_str: Input string to clean
 
         Returns:
-            Очищенная строка, содержащая только безопасные символы
+            Cleaned string containing only safe characters
         """
         if not input_str:
             return ""
 
-        # Удаляем управляющие и потенциально опасные символы
+        # Remove control and potentially dangerous characters
         sanitized = re.sub(r"[^\w\s\-.,;:!?()\[\]{}\'\"]+", "", input_str)
         return sanitized
 
     @staticmethod
     def mask_sensitive_data(data: str) -> str:
-        """
-        Маскирует чувствительные данные (API-ключи, токены) для журналов.
+        """Mask sensitive data (API keys, tokens) for logs.
 
-        Метод обнаруживает и скрывает конфиденциальную информацию в текстовых
-        данных, защищая их от случайного раскрытия в логах.
+        The method detects and hides confidential information in text
+        data, protecting it from accidental disclosure in logs.
 
         Args:
-            data: Строка, которая может содержать чувствительную информацию
+            data: String that may contain sensitive information
 
         Returns:
-            Строка с замаскированными чувствительными данными
+            String with masked sensitive data
         """
         if not data:
             return ""
 
-        # Маскировка API-ключей и токенов
+        # Masking API keys and tokens
         masked = re.sub(
             r'(api[_-]?key|token|secret)["\']?\s*[=:]\s*["\']?([^"\']+)["\']?',
             r"\1=***MASKED***",

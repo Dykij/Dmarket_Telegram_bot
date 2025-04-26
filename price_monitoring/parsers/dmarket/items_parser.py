@@ -1,5 +1,4 @@
-"""
-DMarket Items Parser Module
+"""DMarket Items Parser Module
 
 This module provides functionality for parsing item data from the DMarket API.
 It fetches items for a specific game, processes the responses, and converts
@@ -11,9 +10,10 @@ reliable data retrieval from the DMarket API.
 
 import asyncio
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import aiohttp
+
 from common.dmarket_auth import DMarketAuth
 from price_monitoring.models.dmarket import DMarketItem
 from price_monitoring.parsers.abstract_parser import AbstractParser
@@ -21,8 +21,7 @@ from proxy_http.aiohttp_session_factory import AiohttpSessionFactory
 
 
 class DMarketItemsParser(AbstractParser):
-    """
-    Parser for retrieving items and their prices from the DMarket API.
+    """Parser for retrieving items and their prices from the DMarket API.
 
     This class implements the AbstractParser interface and provides functionality
     for fetching items from the DMarket API, processing the responses, and
@@ -32,6 +31,7 @@ class DMarketItemsParser(AbstractParser):
     implements error handling for API requests, and respects rate limits by
     adding delays between requests.
     """
+
     # Base URL for the DMarket API
     BASE_URL = "https://api.dmarket.com/exchange/v1"
 
@@ -44,8 +44,7 @@ class DMarketItemsParser(AbstractParser):
         items_per_page: int = 100,
         api_request_delay_seconds: float = 1.0,
     ):
-        """
-        Initialize the DMarket items parser.
+        """Initialize the DMarket items parser.
 
         Args:
             session_factory: Factory for creating aiohttp sessions
@@ -64,10 +63,9 @@ class DMarketItemsParser(AbstractParser):
         self._logger = logging.getLogger(__name__)
 
     async def _make_api_request(
-        self, session: aiohttp.ClientSession, params: Dict
-    ) -> Optional[Dict]:
-        """
-        Make a single request to the DMarket API /market/items endpoint.
+        self, session: aiohttp.ClientSession, params: dict
+    ) -> Optional[dict]:
+        """Make a single request to the DMarket API /market/items endpoint.
 
         This method handles the authentication, request execution, and error handling
         for a single API request to the DMarket /market/items endpoint.
@@ -87,7 +85,9 @@ class DMarketItemsParser(AbstractParser):
         method = "GET"
 
         # Add authentication headers using dmarket_auth
-        headers = self._dmarket_auth.get_auth_headers(method=method, api_path=endpoint, params=params)
+        headers = self._dmarket_auth.get_auth_headers(
+            method=method, api_path=endpoint, params=params
+        )
 
         try:
             # Execute the API request
@@ -106,9 +106,8 @@ class DMarketItemsParser(AbstractParser):
             self._logger.error(f"Timeout during DMarket API request to {url}")
             return None
 
-    async def parse(self) -> Tuple[List[DMarketItem], List[Exception]]:
-        """
-        Main parsing method that retrieves all items for the specified game.
+    async def parse(self) -> tuple[list[DMarketItem], list[Exception]]:
+        """Main parsing method that retrieves all items for the specified game.
 
         This method fetches items from the DMarket API page by page using cursor-based
         pagination. It processes each item, converts prices from cents to dollars,
@@ -119,8 +118,8 @@ class DMarketItemsParser(AbstractParser):
             - A list of successfully parsed DMarketItem objects
             - A list of exceptions encountered during parsing
         """
-        all_items: List[DMarketItem] = []
-        errors: List[Exception] = []
+        all_items: list[DMarketItem] = []
+        errors: list[Exception] = []
         cursor = None
         page_num = 1
 
@@ -146,7 +145,9 @@ class DMarketItemsParser(AbstractParser):
 
                     # Check if the response is valid
                     if not data or "objects" not in data:
-                        self._logger.warning(f"No 'objects' in response or request failed for page {page_num}.")
+                        self._logger.warning(
+                            f"No 'objects' in response or request failed for page {page_num}."
+                        )
                         break  # Stop if no data or error
 
                     # Get the items from the response
@@ -180,7 +181,9 @@ class DMarketItemsParser(AbstractParser):
                                 game_id=self._game_id,  # Already known from parser context
                                 title=item_data.get("title"),
                                 price_usd=price_usd_float,  # Use the converted float value
-                                tradable=item_data.get("tradable", True),  # Default to True if missing
+                                tradable=item_data.get(
+                                    "tradable", True
+                                ),  # Default to True if missing
                                 image_url=item_data.get("image"),  # Use .get() for optional fields
                                 float_value=item_data.get("float"),
                                 paint_seed=item_data.get("paintSeed"),
@@ -189,13 +192,17 @@ class DMarketItemsParser(AbstractParser):
 
                             # Basic validation (ensure required fields are present)
                             if not all([item.item_id, item.class_id, item.title]):
-                                self._logger.warning(f"Skipping item due to missing required fields: {item_data}")
+                                self._logger.warning(
+                                    f"Skipping item due to missing required fields: {item_data}"
+                                )
                                 continue
 
                             # Add the valid item to the list
                             all_items.append(item)
                         except Exception as e:
-                            self._logger.error(f"Error processing item data: {item_data}. Error: {e}")
+                            self._logger.error(
+                                f"Error processing item data: {item_data}. Error: {e}"
+                            )
                             errors.append(e)
 
                     # Check for next page cursor
@@ -212,16 +219,19 @@ class DMarketItemsParser(AbstractParser):
                     await asyncio.sleep(self._api_request_delay)
 
                 except Exception as e:
-                    self._logger.error(f"An unexpected error occurred during parsing page {page_num}: {e}")
+                    self._logger.error(
+                        f"An unexpected error occurred during parsing page {page_num}: {e}"
+                    )
                     errors.append(e)
                     break  # Stop parsing this game on critical error
 
-        self._logger.info(f"Finished parsing for game {self._game_id}. Total items: {len(all_items)}, Errors: {len(errors)}")
+        self._logger.info(
+            f"Finished parsing for game {self._game_id}. Total items: {len(all_items)}, Errors: {len(errors)}"
+        )
         return all_items, errors
 
-    async def run(self) -> Tuple[List[DMarketItem], List[Exception]]:
-        """
-        Run the parser and return the results.
+    async def run(self) -> tuple[list[DMarketItem], list[Exception]]:
+        """Run the parser and return the results.
 
         This method is required by the AbstractParser interface and serves as
         a wrapper around the parse() method. It calls parse() and returns the results.

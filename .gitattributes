@@ -1,0 +1,43 @@
+# Определение типов файлов для правильного отображения и обработки
+
+# Python
+*.py text eol=lf diff=python
+*.pyi text eol=lf diff=python
+*.pyx text eol=lf diff=python
+
+# Конфигурация
+*.toml text eol=lf
+*.ini text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.env text eol=lf
+*.env.* text eol=lf
+
+# Markdown и документация
+*.md text eol=lf
+*.rst text eol=lf
+*.txt text eol=lf
+
+# Bash скрипты
+*.sh text eol=lf
+
+# Лингвистика (для анализа GitHub)
+*.py linguist-language=Python
+*.pyi linguist-language=Python
+
+# Игнорировать при экспорте
+.github export-ignore
+.vscode export-ignore
+tests export-ignore
+coverage_html_report export-ignore
+.gitattributes export-ignore
+.gitignore export-ignore
+
+# Бинарные файлы
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary

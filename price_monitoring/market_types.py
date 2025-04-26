@@ -1,24 +1,23 @@
-"""
-Модуль содержит типовые алиасы для работы с рыночными данными.
+"""Moдyл' coдepжut tunoвbie aлuacbi для pa6otbi c pbihoчhbimu дahhbimu.
 
-Этот модуль определяет типовые алиасы для параметров, связанных с
-маркетплейсами. Эти алиасы используются для улучшения типизации и
-повышения читаемости кода в других частях системы.
+Эtot moдyл' onpeдeляet tunoвbie aлuacbi для napametpoв, cвя3ahhbix c
+mapketnлeйcamu. Эtu aлuacbi ucnoл'3yюtcя для yлyчшehuя tunu3aцuu u
+noвbiшehuя чutaemoctu koдa в дpyrux чactяx cuctembi.
 """
 
 from typing import TypeAlias
 
 MarketName: TypeAlias = str
-"""Название маркетплейса."""
+"""Ha3вahue mapketnлeйca."""
 
 NameId: TypeAlias = int  # dmarket identifier
-"""Уникальный идентификатор предмета на маркетплейсе DMarket."""
+"""Yhukaл'hbiй uдehtuфukatop npeдmeta ha mapketnлeйce DMarket."""
 
 ItemNameId: TypeAlias = int  # dmarket market identifier
-"""Уникальный идентификатор типа предмета на маркетплейсе DMarket."""
+"""Yhukaл'hbiй uдehtuфukatop tuna npeдmeta ha mapketnлeйce DMarket."""
 
 OrderPrice: TypeAlias = float | None
-"""Цена заказа. None если заказ отсутствует."""
+"""Цeha 3aka3a. None ecлu 3aka3 otcytctвyet."""
 
 BuySellOrders: TypeAlias = tuple[OrderPrice, OrderPrice]
-"""Кортеж цен заказов на покупку и продажу."""
+"""Kopteж цeh 3aka3oв ha nokynky u npoдaжy."""

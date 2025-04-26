@@ -1,22 +1,75 @@
 version: 1
-disable_existing_loggers: true
-
-
+disable_existing_loggers: false
 
 formatters:
     standard:
-        format: "%(asctime)s - %(module)s - %(levelname)s - %(message)s"
+        format: "%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s"
+        datefmt: "%Y-%m-%d %H:%M:%S"
     json:
         (): 'json_logging.JSONLogFormatter'
+    colored:
+        (): 'colorlog.ColoredFormatter'
+        format: "%(log_color)s%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s%(reset)s"
+        datefmt: "%Y-%m-%d %H:%M:%S"
+        log_colors:
+            DEBUG: 'cyan'
+            INFO: 'green'
+            WARNING: 'yellow'
+            ERROR: 'red'
+            CRITICAL: 'red,bg_white'
 
 handlers:
     console:
         class: logging.StreamHandler
         level: DEBUG
-        formatter: standard
+        formatter: colored
         stream: ext://sys.stdout
+    
+    file:
+        class: logging.handlers.RotatingFileHandler
+        level: INFO
+        formatter: json
+        filename: logs/dmarket_monitoring.log
+        maxBytes: 10485760  # 10 M6
+        backupCount: 10
+        encoding: utf8
+    
+    error_file:
+        class: logging.handlers.RotatingFileHandler
+        level: ERROR
+        formatter: json
+        filename: logs/dmarket_errors.log
+        maxBytes: 10485760  # 10 M6
+        backupCount: 10
+        encoding: utf8
+
+loggers:
+    price_monitoring:
+        level: INFO
+        handlers: [console, file, error_file]
+        propagate: no
+    
+    common:
+        level: INFO
+        handlers: [console, file, error_file]
+        propagate: no
+    
+    bot_handlers:
+        level: INFO
+        handlers: [console, file, error_file]
+        propagate: no
+    
+    aiohttp:
+        level: WARNING
+        handlers: [console, file]
+        propagate: no
+    
+    aiogram:
+        level: INFO
+        handlers: [console, file]
+        propagate: no
 
 root:
     level: INFO
-    handlers: [console]
-    propogate: yes
+    handlers: [console, file, error_file]
+    propagate: no

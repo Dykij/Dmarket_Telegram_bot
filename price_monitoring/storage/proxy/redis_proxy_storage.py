@@ -1,4 +1,4 @@
-from aioredis import Redis
+from redis.asyncio import Redis
 
 from proxy_http.proxy import Proxy
 

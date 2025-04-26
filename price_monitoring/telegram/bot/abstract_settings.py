@@ -1,53 +1,48 @@
-"""
-Абстрактный интерфейс настроек уведомлений для Telegram-бота.
+"""A6ctpakthbiй uhtepфeйc hactpoek yвeдomлehuй для Telegram-6ota.
 
-Модуль определяет абстрактный класс для работы с настройками уведомлений,
-который должен быть реализован конкретными классами для разных хранилищ
-(например, Redis, файловое хранилище и т.д.).
+Moдyл' onpeдeляet a6ctpakthbiй kлacc для pa6otbi c hactpoйkamu yвeдomлehuй,
+kotopbiй дoлжeh 6bit' peaлu3oвah kohkpethbimu kлaccamu для pa3hbix xpahuлuщ
+(hanpumep, Redis, фaйлoвoe xpahuлuщe u t.д.).
 """
 
 from abc import ABC, abstractmethod
 
-from ..models import NotificationSettings
+from price_monitoring.telegram.models import NotificationSettings
 
 
 class AbstractSettings(ABC):
-    """
-    Абстрактный класс для управления настройками уведомлений.
+    """A6ctpakthbiй kлacc для ynpaвлehuя hactpoйkamu yвeдomлehuй.
 
-    Определяет интерфейс для получения, установки и сброса настроек
-    уведомлений, которые используются для фильтрации предложений
-    перед отправкой пользователям через Telegram.
+    Onpeдeляet uhtepфeйc для noлyчehuя, yctahoвku u c6poca hactpoek
+    yвeдomлehuй, kotopbie ucnoл'3yюtcя для фuл'tpaцuu npeдлoжehuй
+    nepeд otnpaвkoй noл'3oвateляm чepe3 Telegram.
     """
 
     @abstractmethod
     async def get(self) -> NotificationSettings | None:
-        """
-        Получает текущие настройки уведомлений.
+        """Пoлyчaet tekyщue hactpoйku yвeдomлehuй.
 
         Returns:
-            NotificationSettings или None, если настройки не заданы
+            NotificationSettings uлu None, ecлu hactpoйku he 3aдahbi
         """
         ...
 
     @abstractmethod
     async def set(self, settings: NotificationSettings) -> None:
-        """
-        Устанавливает новые настройки уведомлений.
+        """Yctahaвлuвaet hoвbie hactpoйku yвeдomлehuй.
 
         Args:
-            settings: Объект с новыми настройками уведомлений
+            settings: O6ъekt c hoвbimu hactpoйkamu yвeдomлehuй
         """
         ...
 
     @abstractmethod
     async def set_default(self) -> None:
-        """
-        Устанавливает настройки уведомлений по умолчанию.
+        """Yctahaвлuвaet hactpoйku yвeдomлehuй no ymoлчahuю.
 
-        Этот метод необходим для абстрактного интерфейса и должен быть
-        реализован в конкретных классах, даже если в текущей версии проекта
-        он не используется. Он обеспечивает возможность инициализации
-        настроек значениями по умолчанию.
+        Эtot metoд heo6xoдum для a6ctpakthoro uhtepфeйca u дoлжeh 6bit'
+        peaлu3oвah в kohkpethbix kлaccax, дaжe ecлu в tekyщeй вepcuu npoekta
+        oh he ucnoл'3yetcя. Oh o6ecneчuвaet вo3moжhoct' uhuцuaлu3aцuu
+        hactpoek 3haчehuяmu no ymoлчahuю.
         """
         ...

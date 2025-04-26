@@ -4,32 +4,19 @@ import asyncio
 import json
 import logging
 import time
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional
 
 import aiohttp
 
 from common.dmarket_auth import build_signature
-from common.errors import (
-    CircuitBreaker,
-    CircuitBreakerOpenError,
-    DMarketAPIError,
-    DMarketAuthError,
-    DMarketRateLimitError,
-    DMarketResourceError,
-    DMarketRequestError,
-    DMarketServerError,
-    DMARKET_PUBLIC_CIRCUIT_BREAKER,
-    DMARKET_PRIVATE_CIRCUIT_BREAKER,
-    DMARKET_TRADING_CIRCUIT_BREAKER,
-    classify_dmarket_error
-)
+from common.errors import (DMARKET_PRIVATE_CIRCUIT_BREAKER, DMARKET_PUBLIC_CIRCUIT_BREAKER,
+                           DMARKET_TRADING_CIRCUIT_BREAKER, CircuitBreaker, CircuitBreakerOpenError,
+                           DMarketAPIError, DMarketAuthError, DMarketRateLimitError,
+                           DMarketRequestError, DMarketResourceError, DMarketServerError,
+                           classify_dmarket_error)
 from price_monitoring.storage.proxy.abstract_proxy_storage import AbstractProxyStorage
-from utils.rate_limiter import (
-    DMARKET_PUBLIC_RATE_LIMITER,
-    DMARKET_PRIVATE_RATE_LIMITER,
-    DMARKET_TRADING_RATE_LIMITER,
-    RateLimiter
-)
+from utils.rate_limiter import (DMARKET_PRIVATE_RATE_LIMITER, DMARKET_PUBLIC_RATE_LIMITER,
+                                DMARKET_TRADING_RATE_LIMITER, RateLimiter)
 
 logger = logging.getLogger(__name__)
 
@@ -86,12 +73,11 @@ class DMarketClient:
         self,
         method: str,
         path: str,
-        params: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None,
+        params: Optional[dict[str, Any]] = None,
+        data: Optional[dict[str, Any]] = None,
         retry_count: int = 0,
-    ) -> Optional[Dict[str, Any]]:
-        """
-        Makes an asynchronous request to the DMarket API with retry logic and circuit breaker.
+    ) -> Optional[dict[str, Any]]:
+        """Makes an asynchronous request to the DMarket API with retry logic and circuit breaker.
 
         Args:
             method: HTTP method (GET, POST, etc.)
@@ -191,16 +177,14 @@ class DMarketClient:
 
                 # Handle error responses
                 error = classify_dmarket_error(
-                    status_code=response.status,
-                    response_data=response_data
+                    status_code=response.status, response_data=response_data
                 )
 
                 # Handle rate limit errors specially
                 if isinstance(error, DMarketRateLimitError):
                     retry_after = error.retry_after
                     await rate_limiter.handle_rate_limit_error(
-                        status_code=response.status,
-                        retry_after=retry_after
+                        status_code=response.status, retry_after=retry_after
                     )
 
                 # Record failure in circuit breaker
@@ -255,8 +239,7 @@ class DMarketClient:
             return None
 
     def _get_rate_limiter_for_path(self, path: str) -> RateLimiter:
-        """
-        Returns the appropriate rate limiter for the given API path.
+        """Returns the appropriate rate limiter for the given API path.
 
         Different DMarket API endpoints have different rate limits:
         - Public endpoints (market items, etc.): 100 requests per minute
@@ -274,27 +257,32 @@ class DMarketClient:
             return self._rate_limiter
 
         # Trading endpoints
-        if any(trading_path in path for trading_path in [
-            "/exchange/v1/offers",
-            "/exchange/v1/user/offers",
-            "/exchange/v1/user/inventory",
-        ]):
+        if any(
+            trading_path in path
+            for trading_path in [
+                "/exchange/v1/offers",
+                "/exchange/v1/user/offers",
+                "/exchange/v1/user/inventory",
+            ]
+        ):
             return DMARKET_TRADING_RATE_LIMITER
 
         # Private endpoints
-        if any(private_path in path for private_path in [
-            "/account/v1/balance",
-            "/exchange/v1/user",
-            "/account/v1/user",
-        ]):
+        if any(
+            private_path in path
+            for private_path in [
+                "/account/v1/balance",
+                "/exchange/v1/user",
+                "/account/v1/user",
+            ]
+        ):
             return DMARKET_PRIVATE_RATE_LIMITER
 
         # Default to public rate limiter for all other endpoints
         return DMARKET_PUBLIC_RATE_LIMITER
 
     def _get_circuit_breaker_for_path(self, path: str) -> Optional[CircuitBreaker]:
-        """
-        Returns the appropriate circuit breaker for the given API path.
+        """Returns the appropriate circuit breaker for the given API path.
 
         Args:
             path: The API path
@@ -307,27 +295,32 @@ class DMarketClient:
             return self._circuit_breaker
 
         # Trading endpoints
-        if any(trading_path in path for trading_path in [
-            "/exchange/v1/offers",
-            "/exchange/v1/user/offers",
-            "/exchange/v1/user/inventory",
-        ]):
+        if any(
+            trading_path in path
+            for trading_path in [
+                "/exchange/v1/offers",
+                "/exchange/v1/user/offers",
+                "/exchange/v1/user/inventory",
+            ]
+        ):
             return DMARKET_TRADING_CIRCUIT_BREAKER
 
         # Private endpoints
-        if any(private_path in path for private_path in [
-            "/account/v1/balance",
-            "/exchange/v1/user",
-            "/account/v1/user",
-        ]):
+        if any(
+            private_path in path
+            for private_path in [
+                "/account/v1/balance",
+                "/exchange/v1/user",
+                "/account/v1/user",
+            ]
+        ):
             return DMARKET_PRIVATE_CIRCUIT_BREAKER
 
         # Default to public circuit breaker for all other endpoints
         return DMARKET_PUBLIC_CIRCUIT_BREAKER
 
     def _should_retry(self, error: DMarketAPIError) -> bool:
-        """
-        Determines if a request should be retried based on the error.
+        """Determines if a request should be retried based on the error.
 
         Args:
             error: The DMarketAPIError that occurred
@@ -336,11 +329,11 @@ class DMarketClient:
             True if the request should be retried, False otherwise
         """
         # Don't retry client errors (except rate limiting which is handled separately)
-        if isinstance(error, DMarketRequestError) or isinstance(error, DMarketAuthError):
+        if isinstance(error, (DMarketRequestError, DMarketAuthError)):
             return False
 
         # Retry server errors and resource errors
-        if isinstance(error, DMarketServerError) or isinstance(error, DMarketResourceError):
+        if isinstance(error, (DMarketServerError, DMarketResourceError)):
             return True
 
         # Retry rate limit errors
@@ -351,8 +344,7 @@ class DMarketClient:
         return False
 
     def _calculate_retry_wait_time(self, retry_count: int) -> float:
-        """
-        Calculates the wait time for a retry using exponential backoff with jitter.
+        """Calculates the wait time for a retry using exponential backoff with jitter.
 
         Args:
             retry_count: The current retry attempt (1-based)
@@ -383,10 +375,10 @@ class DMarketClient:
         price_to: Optional[int] = None,
         tree_filters: Optional[str] = None,
         offset: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """Fetches market items based on specified filters."""
         path = "/exchange/v1/market/items"
-        params: Dict[str, Any] = {
+        params: dict[str, Any] = {
             "gameId": game_id,
             "currency": currency,
             "limit": str(limit),
@@ -410,10 +402,10 @@ class DMarketClient:
         currency: str = "USD",
         limit: int = 100,
         offset: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """Fetches offers based on item title."""
         path = "/exchange/v1/offers-by-title"
-        params: Dict[str, Any] = {
+        params: dict[str, Any] = {
             "title": title,
             "currency": currency,
             "limit": str(limit),
@@ -430,10 +422,10 @@ class DMarketClient:
         currency: str = "USD",  # Add currency parameter
         limit: int = 100,
         offset: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """Fetches user's offers based on status and other filters."""
         path = "/exchange/v1/user/offers"
-        params: Dict[str, Any] = {
+        params: dict[str, Any] = {
             "status": status,
             "currency": currency,
             "limit": str(limit),
@@ -446,7 +438,7 @@ class DMarketClient:
             params["offset"] = offset
         return await self._request("GET", path, params=params)
 
-    async def get_account_balance(self) -> Optional[Dict[str, Any]]:
+    async def get_account_balance(self) -> Optional[dict[str, Any]]:
         """Fetches the account balance.
 
         Ref:
@@ -457,7 +449,7 @@ class DMarketClient:
 
     async def create_offer(
         self, item_id: str, price_cents: int, currency: str = "USD"
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """Creates a sell offer for an item."""
         path = f"/exchange/v1/offers/{item_id}"
         method = "POST"
@@ -466,7 +458,7 @@ class DMarketClient:
 
     async def edit_offer(
         self, offer_id: str, price_cents: int, currency: str = "USD"
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """Edits an existing sell offer."""
         path = f"/exchange/v1/offers/{offer_id}"
         method = "PATCH"

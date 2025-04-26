@@ -1,1 +1,1 @@
-"""Filters package for the Telegram bot.""" 
+"""Filters package for the Telegram bot."""

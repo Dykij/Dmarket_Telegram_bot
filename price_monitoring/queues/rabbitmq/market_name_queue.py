@@ -1,9 +1,8 @@
 from common.rpc.queue_publisher import QueuePublisher
 from common.rpc.queue_reader import QueueReader
-
-from ...models.dmarket import MarketNamePack
-from ..abstract_market_name_queue import (AbstractMarketNameReader,
-                                          AbstractMarketNameWriter)
+from price_monitoring.models.dmarket import MarketNamePack
+from price_monitoring.queues.abstract_market_name_queue import (AbstractMarketNameReader,
+                                                                AbstractMarketNameWriter)
 
 
 class MarketNameReader(AbstractMarketNameReader):

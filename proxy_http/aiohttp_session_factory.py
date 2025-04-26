@@ -9,17 +9,14 @@ from proxy_http.proxy import Proxy
 
 class AiohttpSessionFactory:
     def __init__(self):
-        """
-        Инициализирует фабрику сессий aiohttp.
-        """
+        """Initialize the aiohttp session factory."""
         self._sessions = []
 
     def create_session(self) -> ClientSession:
-        """
-        Создает новую сессию aiohttp и добавляет ее в список сессий.
+        """Create a new aiohttp session and add it to the sessions list.
 
         Returns:
-            ClientSession: Новая сессия aiohttp
+            ClientSession: New aiohttp session
         """
         session = ClientSession()
         self._sessions.append(session)
@@ -28,15 +25,14 @@ class AiohttpSessionFactory:
     def create_session_with_proxy(
         self, proxy: Proxy, headers: Optional[Mapping[str, str]] = None
     ) -> ClientSession:
-        """
-        Создает новую сессию aiohttp с прокси и добавляет ее в список сессий.
+        """Create a new aiohttp session with a proxy and add it to the sessions list.
 
         Args:
-            proxy: Объект прокси
-            headers: Заголовки HTTP (опционально)
+            proxy: Proxy object
+            headers: HTTP headers (optional)
 
         Returns:
-            ClientSession: Новая сессия aiohttp с прокси
+            ClientSession: New aiohttp session with proxy
         """
         connector = ProxyConnector.from_url(proxy.serialize(), ssl=False)
         session = ClientSession(connector=connector, headers=headers)
@@ -44,9 +40,7 @@ class AiohttpSessionFactory:
         return session
 
     async def close_all_sessions(self) -> None:
-        """
-        Закрывает все созданные сессии aiohttp.
-        """
+        """Close all created aiohttp sessions."""
         for session in self._sessions:
             if not session.closed:
                 await session.close()

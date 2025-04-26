@@ -1,8 +1,7 @@
 import asyncio
 import os
 
-from aioredis import Redis
-
+from common.aioredis_compatibility import Redis
 from common.env_var import get_redis_db, get_redis_host, get_redis_port
 from common.redis_connector import RedisConnector
 from price_monitoring.storage.proxy import RedisProxyStorage
@@ -39,7 +38,7 @@ async def main():
         password=redis_password,
     )
 
-    # Загружаем только прокси для DMarket
+    # Load only proxies for DMarket
     await fill_proxies(redis, _DMARKET_PROXIES, _DMARKET_PROXIES_KEY)
 
 

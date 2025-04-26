@@ -1,8 +1,7 @@
-"""
-Общие функции и утилиты для системы мониторинга цен.
+"""Common functions and utilities for the price monitoring system.
 
-Модуль предоставляет общие функции для создания HTTP-заголовков
-и управления сессиями с прокси-серверами.
+The module provides common functions for creating HTTP headers
+and managing sessions with proxy servers.
 """
 
 from collections.abc import Sequence
@@ -12,11 +11,10 @@ from random_user_agent.params import OperatingSystem, SoftwareName
 from random_user_agent.user_agent import UserAgent
 
 from proxy_http.aiohttp_session_factory import AiohttpSessionFactory
-from proxy_http.async_proxies_concurrent_limiter import \
-    AsyncSessionConcurrentLimiter
+from proxy_http.async_proxies_concurrent_limiter import AsyncSessionConcurrentLimiter
 from proxy_http.proxy import Proxy
 
-# Ротатор User-Agent для имитации запросов от разных браузеров
+# User-Agent rotator for simulating requests from different browsers
 user_agent_rotator = UserAgent(
     software_names=[SoftwareName.CHROME.value],
     operating_systems=[OperatingSystem.WINDOWS.value],
@@ -25,14 +23,13 @@ user_agent_rotator = UserAgent(
 
 
 def _create_headers():
-    """
-    Создать набор HTTP-заголовков для запросов.
+    """Create a set of HTTP headers for requests.
 
-    Генерирует заголовки с случайным User-Agent для имитации запросов
-    от разных браузеров, чтобы снизить вероятность блокировки.
+    Generates headers with a random User-Agent to simulate requests
+    from different browsers to reduce the likelihood of blocking.
 
     Returns:
-        dict: Словарь с HTTP-заголовками для запросов.
+        dict: Dictionary with HTTP headers for requests.
     """
     return {
         "User-Agent": user_agent_rotator.get_random_user_agent(),
@@ -49,17 +46,16 @@ def _create_headers():
 
 
 def create_limiter(proxies: Sequence[Proxy]):
-    """
-    Создать ограничитель одновременных подключений через прокси.
+    """Create a limiter for simultaneous connections through proxies.
 
-    Создает объект для контроля и ограничения количества одновременных
-    HTTP-сессий через прокси-серверы, предотвращая их перегрузку.
+    Creates an object to control and limit the number of simultaneous
+    HTTP sessions through proxy servers, preventing their overload.
 
     Args:
-        proxies: Последовательность объектов Proxy для создания сессий.
+        proxies: Sequence of Proxy objects for creating sessions.
 
     Returns:
-        AsyncSessionConcurrentLimiter: Объект управления сессиями.
+        AsyncSessionConcurrentLimiter: Session management object.
     """
     return AsyncSessionConcurrentLimiter(
         [

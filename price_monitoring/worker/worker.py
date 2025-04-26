@@ -3,7 +3,7 @@ import logging
 import typing
 from dataclasses import dataclass
 
-from ..decorators import async_infinite_loop
+from price_monitoring.decorators import async_infinite_loop
 
 logger = logging.getLogger(__name__)
 

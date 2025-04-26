@@ -1,0 +1,133 @@
+# English translations for Dmarket Telegram Bot.
+# Copyright (C) 2024 Dmarket
+# This file is distributed under the same license as the Dmarket Telegram Bot project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-04-15 12:00+0000\n"
+"PO-Revision-Date: 2024-04-15 12:00+0000\n"
+"Last-Translator: Dmarket Team <support@dmarket.com>\n"
+"Language-Team: English\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: bot.py:123
+msgid "Welcome to DMarket Telegram Bot!"
+msgstr "Welcome to DMarket Telegram Bot!"
+
+#: bot.py:145
+msgid "Please select your preferred language:"
+msgstr "Please select your preferred language:"
+
+#: bot.py:167
+msgid "Language set to {}"
+msgstr "Language set to {}"
+
+#: bot.py:189
+msgid "Welcome back!"
+msgstr "Welcome back!"
+
+#: bot.py:210
+msgid "Item {item_name} price changed to ${price}"
+msgstr "Item {item_name} price changed to ${price}"
+
+#: bot.py:232
+msgid "Current offers:"
+msgstr "Current offers:"
+
+#: bot.py:254
+msgid "No offers available at the moment."
+msgstr "No offers available at the moment."
+
+#: bot.py:276
+msgid "Minimum price set to ${price}"
+msgstr "Minimum price set to ${price}"
+
+#: bot.py:298
+msgid "Profit limit set to {limit}%"
+msgstr "Profit limit set to {limit}%"
+
+#: bot.py:320
+msgid "Invalid value. Please enter a number."
+msgstr "Invalid value. Please enter a number."
+
+#: bot.py:342
+msgid "Settings updated successfully."
+msgstr "Settings updated successfully."
+
+#: bot.py:364
+msgid "Error: {error_message}"
+msgstr "Error: {error_message}"
+
+#: bot.py:386
+msgid "Loading..."
+msgstr "Loading..."
+
+#: bot.py:408
+msgid "Page {current_page} of {total_pages}"
+msgstr "Page {current_page} of {total_pages}"
+
+#: bot.py:430
+msgid "Next"
+msgstr "Next"
+
+#: bot.py:452
+msgid "Previous"
+msgstr "Previous"
+
+#: bot.py:474
+msgid "Back"
+msgstr "Back"
+
+#: bot.py:496
+msgid "Cancel"
+msgstr "Cancel"
+
+#: bot.py:518
+msgid "Operation cancelled."
+msgstr "Operation cancelled."
+
+#: bot.py:540
+msgid "Help"
+msgstr "Help"
+
+#: bot.py:562
+msgid "Settings"
+msgstr "Settings"
+
+#: bot.py:584
+msgid "Available commands:"
+msgstr "Available commands:"
+
+#: bot.py:606
+msgid "/start - Start the bot"
+msgstr "/start - Start the bot"
+
+#: bot.py:628
+msgid "/offers - Show available offers"
+msgstr "/offers - Show available offers"
+
+#: bot.py:650
+msgid "/set_min_price - Set minimum price"
+msgstr "/set_min_price - Set minimum price"
+
+#: bot.py:672
+msgid "/set_limit - Set profit limit"
+msgstr "/set_limit - Set profit limit"
+
+#: bot.py:694
+msgid "/language - Change language"
+msgstr "/language - Change language"
+
+#: bot.py:716
+msgid "/help - Show help"
+msgstr "/help - Show help"
+
+#: bot.py:738
+msgid "/settings - Show settings"
+msgstr "/settings - Show settings"

@@ -1,5 +1,4 @@
-"""
-DMarket Authentication Module
+"""DMarket Authentication Module
 
 This module provides functions and classes for authenticating with the DMarket API.
 It includes utilities for generating signatures required for API requests and
@@ -14,7 +13,7 @@ import hashlib
 import hmac
 import json
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 
 def build_signature(
@@ -25,8 +24,7 @@ def build_signature(
     timestamp: str,
     body: Optional[str] = None,
 ) -> str:
-    """
-    Build the signature required for DMarket API authentication.
+    """Build the signature required for DMarket API authentication.
 
     This function creates an HMAC-SHA256 signature using the provided parameters,
     following DMarket's API authentication requirements.
@@ -56,8 +54,7 @@ def build_signature(
 
 
 def get_current_timestamp() -> str:
-    """
-    Get the current Unix timestamp as a string.
+    """Get the current Unix timestamp as a string.
 
     This function returns the current time as a Unix timestamp (seconds since
     January 1, 1970, 00:00:00 UTC) converted to a string.
@@ -69,8 +66,7 @@ def get_current_timestamp() -> str:
 
 
 class DMarketAuth:
-    """
-    Authentication handler for DMarket API requests.
+    """Authentication handler for DMarket API requests.
 
     This class simplifies the process of authenticating requests to the DMarket API
     by generating the required authentication headers using the provided API keys.
@@ -81,8 +77,7 @@ class DMarketAuth:
     """
 
     def __init__(self, public_key: str, secret_key: str):
-        """
-        Initialize a new DMarketAuth instance.
+        """Initialize a new DMarketAuth instance.
 
         Args:
             public_key: The DMarket public API key
@@ -91,9 +86,10 @@ class DMarketAuth:
         self.public_key = public_key
         self.secret_key = secret_key
 
-    def get_auth_headers(self, method: str, api_path: str, params: Optional[Dict] = None, body: Optional[Dict] = None) -> Dict[str, str]:
-        """
-        Generate authentication headers for a DMarket API request.
+    def get_auth_headers(
+        self, method: str, api_path: str, params: Optional[dict] = None, body: Optional[dict] = None
+    ) -> dict[str, str]:
+        """Generate authentication headers for a DMarket API request.
 
         This method creates the X-Api-Key and X-Request-Sign headers required for
         authenticating requests to the DMarket API.
@@ -122,7 +118,7 @@ class DMarketAuth:
             method=method,
             api_path=api_path,
             timestamp=timestamp,
-            body=body_str
+            body=body_str,
         )
 
         # Create and return the headers
@@ -130,7 +126,7 @@ class DMarketAuth:
             "X-Api-Key": self.public_key,
             "X-Request-Sign": signature,
             "X-Sign-Date": timestamp,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
 
         return headers

@@ -1,18 +1,16 @@
-"""
-Константы для системы мониторинга цен.
+"""Kohctahtbi для cuctembi mohutopuhra цeh.
 
-Модуль содержит именованные константы для именования очередей сообщений,
-ключей Redis и других параметров системы, обеспечивая единообразие
-и предотвращая опечатки при использовании этих значений в коде.
+Moдyл' coдepжut umehoвahhbie kohctahtbi для umehoвahuя oчepeдeй coo6щehuй,
+kлючeй Redis u дpyrux napametpoв cuctembi, o6ecneчuвaя eдuhoo6pa3ue
+u npeдotвpaщaя oneчatku npu ucnoл'3oвahuu эtux 3haчehuй в koдe.
 """
 
 
 class QueueNames:
-    """
-    Имена очередей сообщений в системе.
+    """Иmeha oчepeдeй coo6щehuй в cucteme.
 
-    Определяет стандартные имена для очередей сообщений,
-    используемых для обмена данными между компонентами системы.
+    Onpeдeляet ctahдapthbie umeha для oчepeдeй coo6щehuй,
+    ucnoл'3yembix для o6meha дahhbimu meждy komnohehtamu cuctembi.
     """
 
     DMARKET_RESULT = "dmarket_result"
@@ -20,11 +18,10 @@ class QueueNames:
 
 
 class RedisKeys:
-    """
-    Ключи для хранения данных в Redis.
+    """Kлючu для xpahehuя дahhbix в Redis.
 
-    Определяет стандартные ключи для хранения различных типов
-    данных в Redis, обеспечивая единообразную структуру хранилища.
+    Onpeдeляet ctahдapthbie kлючu для xpahehuя pa3лuчhbix tunoв
+    дahhbix в Redis, o6ecneчuвaя eдuhoo6pa3hyю ctpyktypy xpahuлuщa.
     """
 
     DMARKET_ITEM_SCHEDULE = "dmarket_item_schedule"
@@ -33,12 +30,18 @@ class RedisKeys:
 
 
 class TelegramRedisKeys:
-    """
-    Ключи для хранения данных Telegram в Redis.
+    """Kлючu для xpahehuя дahhbix Telegram в Redis.
 
-    Определяет стандартные ключи для хранения настроек и данных,
-    связанных с работой Telegram-бота в Redis.
+    Onpeдeляet ctahдapthbie kлючu для xpahehuя hactpoek u дahhbix,
+    cвя3ahhbix c pa6otoй Telegram-6ota в Redis.
     """
 
     WHITELIST_KEY = "telegram:whitelist"
     SETTINGS_KEY = "telegram:settings"
+
+
+# Cnucok noддepжuвaembix urp
+SUPPORTED_GAMES = ["cs2", "dota2", "rust", "tf2"]
+
+# Peжumbi toproвлu
+TRADING_MODES = ["buy", "sell"]

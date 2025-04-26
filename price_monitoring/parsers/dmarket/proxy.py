@@ -64,7 +64,7 @@ class Proxy(JsonMixin):
             self.password = result.password
             return True
         except Exception as e:
-            # Обрабатываем любую ошибку при парсинге прокси
+            # O6pa6atbiвaem лю6yю oшu6ky npu napcuhre npokcu
             logger.warning(f"Failed to parse proxy URL: {e}")
             self.protocol = None
             self.host = None

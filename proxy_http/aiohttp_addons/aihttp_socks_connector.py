@@ -1,5 +1,4 @@
-"""
-Модуль для обеспечения поддержки SOCKS-прокси в aiohttp.
+"""Модуль для обеспечения поддержки SOCKS-прокси в aiohttp.
 
 Предоставляет расширение для библиотеки aiohttp, позволяющее выполнять
 HTTP-запросы через SOCKS-прокси, что обеспечивает дополнительный уровень
@@ -10,126 +9,69 @@ HTTP-запросы через SOCKS-прокси, что обеспечивае
 """
 
 from aiohttp import TCPConnector
-from python_socks import ProxyType, parse_proxy_url
+from python_socks import parse_proxy_url
 from python_socks.async_.asyncio.v2 import Proxy
 
 
 class ProxyConnector(TCPConnector):
-    """
-    Коннектор для aiohttp с поддержкой различных типов прокси.
+    """Коннектор для aiohttp с поддержкой различных типов прокси.
 
     Расширяет стандартный TCPConnector, добавляя возможность
-    маршрутизации запросов через прокси-серверы различных типов,
-    включая SOCKS4, SOCKS5 и HTTP.
+    подключения через прокси-серверы, включая HTTP и SOCKS прокси.
 
     Attributes:
-        _proxy_type: Тип прокси (SOCKS4, SOCKS5, HTTP)
-        _proxy_host: Хост прокси-сервера
-        _proxy_port: Порт прокси-сервера
-        _proxy_username: Имя пользователя для авторизации на прокси
-        _proxy_password: Пароль для авторизации на прокси
-        _rdns: Флаг разрешения имен через прокси
+        proxy_url: URL прокси-сервера в формате 'protocol://user:password@host:port'
     """
 
-    def __init__(
-        self,
-        proxy_type=ProxyType.SOCKS5,
-        host=None,
-        port=None,
-        username=None,
-        password=None,
-        rdns=None,
-        **kwargs,
-    ):
-        """
-        Инициализирует прокси-коннектор с указанными параметрами.
+    def __init__(self, proxy_url, **kwargs):
+        """Инициализирует коннектор с настройками прокси-сервера.
 
         Args:
-            proxy_type: Тип прокси из enum ProxyType
-            host: Хост прокси-сервера
-            port: Порт прокси-сервера
-            username: Имя пользователя для авторизации на прокси
-            password: Пароль для авторизации на прокси
-            rdns: Флаг разрешения имен через прокси
-            **kwargs: Дополнительные параметры для TCPConnector
+            proxy_url: URL прокси-сервера в формате 'protocol://user:password@host:port',
+                      где protocol может быть http, socks4, socks5
+            **kwargs: Дополнительные аргументы для базового TCPConnector
         """
         super().__init__(**kwargs)
+        self._proxy_url = proxy_url
 
-        self._proxy_type = proxy_type
-        self._proxy_host = host
-        self._proxy_port = port
-        self._proxy_username = username
-        self._proxy_password = password
-        self._rdns = rdns
+        # Настраиваем параметры прокси
+        proxy_type, host, port, username, password = parse_proxy_url(proxy_url)
+        self._proxy_params = (proxy_type, host, port, username, password)
 
-    # noinspection PyMethodOverriding
-    async def _wrap_create_connection(self, protocol_factory, host, port, *, ssl, **kwargs):
+    async def _create_proxy_connection(self, req, traces, timeout):
+        """Создает соединение через прокси-сервер.
+
+        Args:
+            req: Объект запроса
+            traces: Трассировки запроса
+            timeout: Таймаут соединения
+
+        Returns:
+            Установленное соединение через прокси-сервер
         """
-        Создает соединение через прокси-сервер.
+        proxy_type, host, port, username, password = self._proxy_params
 
-        Этот метод переопределяет стандартное поведение TCPConnector,
-        перенаправляя соединение через указанный прокси-сервер.
+        # Создаем объект прокси с нужными параметрами
+        proxy = Proxy.create(proxy_type, host=host, port=port, username=username, password=password)
 
-        Примечание: Этот метод необходим для обеспечения поддержки прокси
-        в aiohttp и будет вызываться внутренними механизмами библиотеки
+        # Получаем целевые хост и порт из запроса
+        target_host = req.url.host
+        target_port = req.url.port or (443 if req.url.scheme == "https" else 80)
+
+        # Устанавливаем соединение через прокси
+        connection = await proxy.connect(target_host, target_port)
+
+        return connection
+
+    async def _create_direct_connection(self, req, traces, timeout):
+        """Создает прямое соединение, если прокси не указан.
+
+        Переопределяет стандартный метод создания соединения
         при выполнении HTTP-запросов.
-
-        Args:
-            protocol_factory: Фабрика протоколов
-            host: Хост целевого сервера
-            port: Порт целевого сервера
-            ssl: Параметры SSL/TLS
-            **kwargs: Дополнительные параметры соединения
-
-        Returns:
-            Кортеж (transport, protocol) для установленного соединения
         """
-        proxy = Proxy.create(
-            proxy_type=self._proxy_type,
-            host=self._proxy_host,
-            port=self._proxy_port,
-            username=self._proxy_username,
-            password=self._proxy_password,
-            rdns=self._rdns,
-            loop=self._loop,
-        )
+        # Если есть прокси, используем его
+        if hasattr(self, "_proxy_params"):
+            return await self._create_proxy_connection(req, traces, timeout)
 
-        connect_timeout = None
-
-        timeout = kwargs.get("timeout")
-        if timeout is not None:
-            connect_timeout = getattr(timeout, "sock_connect", None)
-
-        stream = await proxy.connect(
-            dest_host=host, dest_port=port, dest_ssl=ssl, timeout=connect_timeout
-        )
-
-        transport = stream.writer.transport
-        protocol = protocol_factory()
-
-        transport.set_protocol(protocol)
-        protocol.transport = transport
-
-        return transport, protocol
-
-    @classmethod
-    def from_url(cls, url, **kwargs):
-        """
-        Создает прокси-коннектор из URL.
-
-        Args:
-            url: URL прокси в формате "протокол://[логин:пароль@]хост:порт"
-            **kwargs: Дополнительные параметры для инициализации коннектора
-
-        Returns:
-            Настроенный экземпляр ProxyConnector
-        """
-        proxy_type, host, port, username, password = parse_proxy_url(url)
-        return cls(
-            proxy_type=proxy_type,
-            host=host,
-            port=port,
-            username=username,
-            password=password,
-            **kwargs,
-        )
+        # Иначе используем стандартный способ создания соединения
+        return await super()._create_direct_connection(req, traces, timeout)

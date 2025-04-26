@@ -1,4 +1,4 @@
 """General settings constants for the Telegram bot."""
 
-# Константа для количества элементов на странице
-PAGE_SIZE = 5 
+# Kohctahta для koлuчectвa элemehtoв ha ctpahuцe
+PAGE_SIZE = 5

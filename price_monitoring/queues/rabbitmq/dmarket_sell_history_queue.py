@@ -1,8 +1,7 @@
 from common.rpc.queue_publisher import QueuePublisher
 from common.rpc.queue_reader import QueueReader
-
-from ...models.dmarket import DmarketSellHistory
-from ..abstract_dmarket_sell_history_queue import (
+from price_monitoring.models.dmarket import DmarketSellHistory
+from price_monitoring.queues.abstract_dmarket_sell_history_queue import (
     AbstractDmarketSellHistoryReader, AbstractDmarketSellHistoryWriter)
 
 

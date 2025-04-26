@@ -5,7 +5,7 @@ from price_monitoring.telegram.offers.base_item_offer import BaseItemOffer
 
 
 class DmarketOffer(BaseItemOffer):
-    """Предложение для предмета с DMarket с информацией о средней цене и количестве продаж."""
+    """Пpeдлoжehue для npeдmeta c DMarket c uhфopmaцueй o cpeдheй цehe u koлuчectвe npoдaж."""
 
     def __init__(
         self,
@@ -18,7 +18,7 @@ class DmarketOffer(BaseItemOffer):
         super().__init__(market_name, orig_price, suggested_price)
         self.mean_price = round(mean_price, 2)
         self.sold_per_week = sold_per_week
-        self.tradable = True  # По умолчанию предметы торгуемые
+        self.tradable = True  # Пo ymoлчahuю npeдmetbi topryembie
 
     def create_notification(self) -> ItemOfferNotification:
         short_title = f"AVG ${self.mean_price} | {self.sold_per_week} SOLD IN WEEK"

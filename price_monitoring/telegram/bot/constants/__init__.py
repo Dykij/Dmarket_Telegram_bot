@@ -1,1 +1,1 @@
-"""Constants package for the Telegram bot.""" 
+"""Constants package for the Telegram bot."""

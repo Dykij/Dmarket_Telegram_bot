@@ -1,5 +1,4 @@
-"""
-Redis Connector Module
+"""Redis Connector Module
 
 This module provides a high-level interface for connecting to Redis and performing
 common operations. It supports both asynchronous and synchronous Redis clients.
@@ -19,13 +18,25 @@ Features:
 
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
-import time
+from typing import Any, Optional, Union
 
+# Пpumehяem natч nepeд umnoptom aioredis, чto6bi u36eжat' oшu6ku c TimeoutError
+try:
+    # Иmnoptupyem hoвbiй natч для uckлючehuй aioredis
+    from common.patches.aioredis_exceptions_patch import patch_applied
+
+    if patch_applied:
+        logging.debug("✅ Пatч aioredis.exceptions ycneшho npumeheh")
+    else:
+        logging.warning("⚠️ Пatч aioredis.exceptions he 6biл npumeheh")
+except ImportError as e:
+    logging.warning(f"⚠️ He yдaлoc' umnoptupoвat' natч для aioredis: {e}")
+
+# Иmnoptupyem aioredis nocлe npumehehuя natчa
 import aioredis
-from aioredis import Redis as AsyncRedis
 import redis  # Synchronous Redis client
-from redis.exceptions import ConnectionError, RedisError, TimeoutError
+from aioredis import Redis as AsyncRedis
+from redis.exceptions import ConnectionError, TimeoutError
 from redis.sentinel import Sentinel
 
 # Configure logger
@@ -33,8 +44,7 @@ logger = logging.getLogger(__name__)
 
 
 class RedisConnector:
-    """
-    A high-level connector for Redis operations.
+    """A high-level connector for Redis operations.
 
     This class provides methods for connecting to Redis, getting clients,
     and managing connections. It uses aioredis for asynchronous operations.
@@ -70,7 +80,7 @@ class RedisConnector:
         retry_attempts: int = 3,
         retry_delay: float = 1.0,
         sentinel_master: Optional[str] = None,
-        sentinel_nodes: Optional[List[Tuple[str, int]]] = None,
+        sentinel_nodes: Optional[list[tuple[str, int]]] = None,
         cluster_mode: bool = False,
         ssl: bool = False,
         ssl_cert_reqs: str = "required",
@@ -78,8 +88,7 @@ class RedisConnector:
         ssl_certfile: Optional[str] = None,
         ssl_keyfile: Optional[str] = None,
     ):
-        """
-        Initialize a new RedisConnector.
+        """Initialize a new RedisConnector.
 
         Args:
             host: The Redis server hostname or IP address (or comma-separated list for cluster)
@@ -118,8 +127,7 @@ class RedisConnector:
         self.client: Optional[AsyncRedis] = None
 
     async def get_client(self) -> AsyncRedis:
-        """
-        Get a Redis client, creating it if necessary.
+        """Get a Redis client, creating it if necessary.
 
         This method returns the existing Redis client if one exists,
         or creates a new one if none exists yet. The client is stored
@@ -160,8 +168,7 @@ class RedisConnector:
                         logger.info("Connecting to Redis Cluster")
                         # Parse comma-separated hosts into a list of addresses
                         cluster_nodes = [
-                            {"host": h.strip(), "port": self.port}
-                            for h in self.host.split(",")
+                            {"host": h.strip(), "port": self.port} for h in self.host.split(",")
                         ]
                         self.client = await aioredis.create_redis_pool(
                             [f"redis://{node['host']}:{node['port']}" for node in cluster_nodes],
@@ -195,17 +202,18 @@ class RedisConnector:
                 except (ConnectionError, OSError, asyncio.TimeoutError) as e:
                     if attempt < self.retry_attempts - 1:
                         logger.warning(
-                            f"Failed to connect to Redis (attempt {attempt + 1}/{self.retry_attempts}): {str(e)}"
+                            f"Failed to connect to Redis (attempt {attempt + 1}/{self.retry_attempts}): {e!s}"
                         )
                         await asyncio.sleep(self.retry_delay)
                     else:
-                        logger.error(f"Failed to connect to Redis after {self.retry_attempts} attempts: {str(e)}")
-                        raise ConnectionError(f"Failed to connect to Redis: {str(e)}")
+                        logger.error(
+                            f"Failed to connect to Redis after {self.retry_attempts} attempts: {e!s}"
+                        )
+                        raise ConnectionError(f"Failed to connect to Redis: {e!s}")
         return self.client
 
     async def close(self) -> None:
-        """
-        Close the connection to the Redis server.
+        """Close the connection to the Redis server.
 
         This method closes the underlying Redis client connection
         and sets the client attribute to None. If no connection exists,
@@ -219,13 +227,12 @@ class RedisConnector:
                 await self.client.wait_closed()
                 logger.info("Redis connection closed successfully")
             except Exception as e:
-                logger.warning(f"Error while closing Redis connection: {str(e)}")
+                logger.warning(f"Error while closing Redis connection: {e!s}")
             finally:
                 self.client = None
 
     async def execute_with_retry(self, command: str, *args, **kwargs) -> Any:
-        """
-        Execute a Redis command with retry logic.
+        """Execute a Redis command with retry logic.
 
         This method attempts to execute the specified Redis command,
         retrying if a connection error occurs.
@@ -249,11 +256,13 @@ class RedisConnector:
             except (ConnectionError, TimeoutError) as e:
                 if attempt < self.retry_attempts - 1:
                     logger.warning(
-                        f"Redis command '{command}' failed (attempt {attempt + 1}/{self.retry_attempts}): {str(e)}"
+                        f"Redis command '{command}' failed (attempt {attempt + 1}/{self.retry_attempts}): {e!s}"
                     )
                     await asyncio.sleep(self.retry_delay)
                 else:
-                    logger.error(f"Redis command '{command}' failed after {self.retry_attempts} attempts: {str(e)}")
+                    logger.error(
+                        f"Redis command '{command}' failed after {self.retry_attempts} attempts: {e!s}"
+                    )
                     raise
 
     @staticmethod
@@ -267,7 +276,7 @@ class RedisConnector:
         retry_on_timeout: bool = True,
         max_connections: int = 10,
         sentinel_master: Optional[str] = None,
-        sentinel_nodes: Optional[List[Tuple[str, int]]] = None,
+        sentinel_nodes: Optional[list[tuple[str, int]]] = None,
         cluster_mode: bool = False,
         ssl: bool = False,
         ssl_cert_reqs: str = "required",
@@ -275,8 +284,7 @@ class RedisConnector:
         ssl_certfile: Optional[str] = None,
         ssl_keyfile: Optional[str] = None,
     ) -> Union[redis.Redis, redis.sentinel.SentinelConnectionPool, redis.cluster.RedisCluster]:
-        """
-        Create a synchronous Redis client.
+        """Create a synchronous Redis client.
 
         This static method creates a new synchronous Redis client using the redis package.
         It's useful for operations that don't need to be asynchronous or for compatibility
@@ -320,13 +328,15 @@ class RedisConnector:
 
         # SSL parameters if SSL is enabled
         if ssl:
-            connection_kwargs.update({
-                "ssl": True,
-                "ssl_cert_reqs": ssl_cert_reqs,
-                "ssl_ca_certs": ssl_ca_certs,
-                "ssl_certfile": ssl_certfile,
-                "ssl_keyfile": ssl_keyfile,
-            })
+            connection_kwargs.update(
+                {
+                    "ssl": True,
+                    "ssl_cert_reqs": ssl_cert_reqs,
+                    "ssl_ca_certs": ssl_ca_certs,
+                    "ssl_certfile": ssl_certfile,
+                    "ssl_keyfile": ssl_keyfile,
+                }
+            )
 
         # Add password if provided
         if password:
@@ -335,7 +345,9 @@ class RedisConnector:
         try:
             if sentinel_master and sentinel_nodes:
                 # Use Redis Sentinel for high availability
-                logger.info(f"Creating synchronous Redis Sentinel client for master '{sentinel_master}'")
+                logger.info(
+                    f"Creating synchronous Redis Sentinel client for master '{sentinel_master}'"
+                )
                 sentinel = Sentinel(
                     sentinel_nodes,
                     socket_timeout=socket_timeout,
@@ -347,23 +359,15 @@ class RedisConnector:
                     ssl_keyfile=ssl_keyfile,
                 )
                 return sentinel.master_for(
-                    sentinel_master,
-                    socket_timeout=socket_timeout,
-                    db=db_int,
-                    **connection_kwargs
+                    sentinel_master, socket_timeout=socket_timeout, db=db_int, **connection_kwargs
                 )
             elif cluster_mode:
                 # Use Redis Cluster mode for scalability
                 logger.info("Creating synchronous Redis Cluster client")
                 # Parse comma-separated hosts into a list of addresses
-                cluster_nodes = [
-                    {"host": h.strip(), "port": port_int}
-                    for h in host.split(",")
-                ]
+                cluster_nodes = [{"host": h.strip(), "port": port_int} for h in host.split(",")]
                 return redis.cluster.RedisCluster(
-                    startup_nodes=cluster_nodes,
-                    decode_responses=False,
-                    **connection_kwargs
+                    startup_nodes=cluster_nodes, decode_responses=False, **connection_kwargs
                 )
             else:
                 # Standard Redis connection
@@ -373,9 +377,9 @@ class RedisConnector:
                     port=port_int,
                     db=db_int,
                     max_connections=max_connections,
-                    **connection_kwargs
+                    **connection_kwargs,
                 )
                 return redis.Redis(connection_pool=connection_pool)
         except (ConnectionError, redis.RedisError) as e:
-            logger.error(f"Failed to create synchronous Redis client: {str(e)}")
-            raise ConnectionError(f"Failed to connect to Redis: {str(e)}")
+            logger.error(f"Failed to create synchronous Redis client: {e!s}")
+            raise ConnectionError(f"Failed to connect to Redis: {e!s}")

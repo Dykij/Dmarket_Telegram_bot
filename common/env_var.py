@@ -1,5 +1,4 @@
-"""
-Environment Variables Module
+"""Environment Variables Module
 
 This module provides functions for accessing environment variables used throughout the application.
 It includes helper functions for retrieving variables with proper type conversion and default values,
@@ -17,15 +16,14 @@ The module is organized into sections for different components:
 
 import logging
 import os
-from typing import List, Optional
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 
 # --- Helper function to get env var with logging ---
 def _get_env(var_name: str, default: Optional[str] = None) -> Optional[str]:
-    """
-    Get the value of an environment variable with logging.
+    """Get the value of an environment variable with logging.
 
     This helper function retrieves the value of an environment variable and logs a warning
     if the variable is not set and no default value is provided.
@@ -40,16 +38,13 @@ def _get_env(var_name: str, default: Optional[str] = None) -> Optional[str]:
     """
     value = os.getenv(var_name, default)
     if value is None and default is None:
-         logger.warning(
-             f"Environment variable {var_name} is not set and has no default value."
-         )
+        logger.warning(f"Environment variable {var_name} is not set and has no default value.")
     return value
 
 
 # --- RabbitMQ ---
 def get_rabbitmq_host() -> str:
-    """
-    Get the RabbitMQ host address.
+    """Get the RabbitMQ host address.
 
     Returns:
         The RabbitMQ host address from the RABBITMQ_HOST environment variable,
@@ -59,8 +54,7 @@ def get_rabbitmq_host() -> str:
 
 
 def get_rabbitmq_port() -> int:
-    """
-    Get the RabbitMQ port number.
+    """Get the RabbitMQ port number.
 
     Returns:
         The RabbitMQ port from the RABBITMQ_PORT environment variable as an integer,
@@ -70,8 +64,7 @@ def get_rabbitmq_port() -> int:
 
 
 def get_rabbitmq_user() -> str:
-    """
-    Get the RabbitMQ username.
+    """Get the RabbitMQ username.
 
     Returns:
         The RabbitMQ username from the RABBITMQ_USER environment variable,
@@ -81,8 +74,7 @@ def get_rabbitmq_user() -> str:
 
 
 def get_rabbitmq_password() -> str:
-    """
-    Get the RabbitMQ password.
+    """Get the RabbitMQ password.
 
     Returns:
         The RabbitMQ password from the RABBITMQ_PASSWORD environment variable,
@@ -92,8 +84,7 @@ def get_rabbitmq_password() -> str:
 
 
 def get_rabbitmq_virtual_host() -> str:
-    """
-    Get the RabbitMQ virtual host.
+    """Get the RabbitMQ virtual host.
 
     Returns:
         The RabbitMQ virtual host from the RABBITMQ_VIRTUAL_HOST environment variable,
@@ -104,8 +95,7 @@ def get_rabbitmq_virtual_host() -> str:
 
 # --- Redis ---
 def get_redis_host() -> str:
-    """
-    Get the Redis host address.
+    """Get the Redis host address.
 
     Returns:
         The Redis host address from the REDIS_HOST environment variable,
@@ -115,8 +105,7 @@ def get_redis_host() -> str:
 
 
 def get_redis_port() -> int:
-    """
-    Get the Redis port number.
+    """Get the Redis port number.
 
     Returns:
         The Redis port from the REDIS_PORT environment variable as an integer,
@@ -126,8 +115,7 @@ def get_redis_port() -> int:
 
 
 def get_redis_db() -> int:
-    """
-    Get the Redis database number.
+    """Get the Redis database number.
 
     Returns:
         The Redis database number from the REDIS_DB environment variable as an integer,
@@ -138,8 +126,7 @@ def get_redis_db() -> int:
 
 # --- Telegram ---
 def get_telegram_api_token() -> str:
-    """
-    Get the Telegram API token.
+    """Get the Telegram API token.
 
     Returns:
         The Telegram API token from the TELEGRAM_API_TOKEN environment variable,
@@ -149,8 +136,7 @@ def get_telegram_api_token() -> str:
 
 
 def get_telegram_whitelist() -> str:
-    """
-    Get the list of allowed Telegram users.
+    """Get the list of allowed Telegram users.
 
     Returns:
         A comma-separated string of allowed Telegram user IDs from the TELEGRAM_WHITELIST
@@ -161,8 +147,7 @@ def get_telegram_whitelist() -> str:
 
 # --- DMarket ---
 def get_dmarket_public_key() -> str:
-    """
-    Get the DMarket API public key.
+    """Get the DMarket API public key.
 
     Returns:
         The DMarket public key from the DMARKET_PUBLIC_KEY environment variable,
@@ -172,8 +157,7 @@ def get_dmarket_public_key() -> str:
 
 
 def get_dmarket_secret_key() -> str:
-    """
-    Get the DMarket API secret key.
+    """Get the DMarket API secret key.
 
     Returns:
         The DMarket secret key from the DMARKET_SECRET_KEY environment variable,
@@ -183,8 +167,7 @@ def get_dmarket_secret_key() -> str:
 
 
 def get_dmarket_game_ids() -> str:
-    """
-    Get the comma-separated list of DMarket game IDs to parse.
+    """Get the comma-separated list of DMarket game IDs to parse.
 
     Returns:
         A comma-separated string of game IDs from the DMARKET_GAME_IDS environment variable,
@@ -195,8 +178,7 @@ def get_dmarket_game_ids() -> str:
 
 # --- Parser Settings ---
 def get_parse_delay_seconds() -> int:
-    """
-    Get the delay between parsing cycles in seconds.
+    """Get the delay between parsing cycles in seconds.
 
     Returns:
         The delay in seconds from the PARSE_DELAY_SECONDS environment variable as an integer,
@@ -206,8 +188,7 @@ def get_parse_delay_seconds() -> int:
 
 
 def get_items_per_page() -> int:
-    """
-    Get the number of items to fetch per API request.
+    """Get the number of items to fetch per API request.
 
     Returns:
         The number of items per page from the ITEMS_PER_PAGE environment variable as an integer,
@@ -217,8 +198,7 @@ def get_items_per_page() -> int:
 
 
 def get_api_request_delay_seconds() -> float:
-    """
-    Get the delay between API requests in seconds.
+    """Get the delay between API requests in seconds.
 
     Returns:
         The delay in seconds from the API_REQUEST_DELAY_SECONDS environment variable as a float,
@@ -228,8 +208,7 @@ def get_api_request_delay_seconds() -> float:
 
 
 def get_currency() -> str:
-    """
-    Get the currency for item prices.
+    """Get the currency for item prices.
 
     Returns:
         The currency code from the CURRENCY environment variable,
@@ -240,8 +219,7 @@ def get_currency() -> str:
 
 # --- Worker Settings ---
 def get_dmarket_commission_percent() -> float:
-    """
-    Get the DMarket commission percentage.
+    """Get the DMarket commission percentage.
 
     Returns:
         The commission percentage from the DMARKET_COMMISSION_PERCENT environment variable as a float,
@@ -251,8 +229,7 @@ def get_dmarket_commission_percent() -> float:
 
 
 def get_profit_threshold_usd() -> float:
-    """
-    Get the profit threshold in USD.
+    """Get the profit threshold in USD.
 
     Returns:
         The profit threshold from the PROFIT_THRESHOLD_USD environment variable as a float,
@@ -263,8 +240,7 @@ def get_profit_threshold_usd() -> float:
 
 # --- Logging ---
 def get_log_level() -> str:
-    """
-    Get the logging level.
+    """Get the logging level.
 
     Returns:
         The logging level from the LOG_LEVEL environment variable,

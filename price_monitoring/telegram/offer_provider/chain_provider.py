@@ -1,9 +1,8 @@
 import asyncio
 import typing
-from typing import List, Optional
+from typing import Optional
 
 from common.tracer import trace
-
 from price_monitoring.telegram.offer_provider.abstract_offer_provider import AbstractOfferProvider
 from price_monitoring.telegram.offers.base_item_offer import BaseItemOffer
 
@@ -17,8 +16,8 @@ class ChainProvider(AbstractOfferProvider):
         self,
         percentage_limit: Optional[float] = None,
         min_price: Optional[float] = None,
-    ) -> List[BaseItemOffer]:
-        result: List[BaseItemOffer] = []
+    ) -> list[BaseItemOffer]:
+        result: list[BaseItemOffer] = []
         tasks = [
             provider.get_offers(percentage_limit=percentage_limit, min_price=min_price)
             for provider in self.offer_providers

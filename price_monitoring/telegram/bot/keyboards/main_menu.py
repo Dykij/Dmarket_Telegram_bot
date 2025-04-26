@@ -5,28 +5,17 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
 def create_main_menu_keyboard() -> types.InlineKeyboardMarkup:
-    """
-    Создает клавиатуру главного меню бота.
-    
+    """Co3дaet kлaвuatypy rлaвhoro mehю 6ota.
+
     Returns:
-        Клавиатура с кнопками главного меню.
+        Kлaвuatypa c khonkamu rлaвhoro mehю.
     """
     builder = InlineKeyboardBuilder()
-    builder.button(
-        text="📊 Выбрать режим", callback_data="select_mode"
-    )
-    builder.button(
-        text="⚙️ Настроить фильтры", callback_data="configure_filters"
-    )
-    builder.button(
-        text="🔍 Показать предложения", callback_data="show_offers"
-    )
-    builder.button(
-        text="🎮 Выбрать игры", callback_data="select_games"
-    )
-    builder.button(
-        text="❓ Помощь", callback_data="show_help"
-    )
-    # Расположим кнопки: 2 в ряд, 2 в ряд, последнюю отдельно
+    builder.button(text="📊 Bbi6pat' peжum", callback_data="select_mode")
+    builder.button(text="⚙️ Hactpout' фuл'tpbi", callback_data="configure_filters")
+    builder.button(text="🔍 Пoka3at' npeдлoжehuя", callback_data="show_offers")
+    builder.button(text="🎮 Bbi6pat' urpbi", callback_data="select_games")
+    builder.button(text="❓ Пomoщ'", callback_data="show_help")
+    # Pacnoлoжum khonku: 2 в pяд, 2 в pяд, nocлeдhюю otдeл'ho
     builder.adjust(2, 2, 1)
-    return builder.as_markup() 
+    return builder.as_markup()

@@ -1,7 +1,23 @@
 [tool.black]
 line-length = 100
-target-version = ['py310']
+target-version = ['py311']
 include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | __pycache__
+  | coverage_html_report
+)/
+'''
 
 [tool.pylint.'MESSAGES CONTROL']
 disable = [
@@ -16,26 +32,22 @@ disable = [
     "no-else-return",
     "broad-except",
     "logging-fstring-interpolation",
-    # Добавлено для решения ложного срабатывания на os.getenv и os.path
     "no-member",
 ]
 
 [tool.pylint.format]
-# Maximum number of characters on a single line.
 max-line-length = 100
 
 [tool.pylint.similarities]
-# Maximum number of characters on a single line.
 ignore-imports = "yes"
 
 [tool.pylint.basic]
-# Maximum number of characters on a single line.
 good-names = [
     "f", "s", "d", "i", "j", "k", "setUp", "tearDown"
 ]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 ignore_missing_imports = true
 allow_redefinition = true
 warn_return_any = false
@@ -50,9 +62,15 @@ ignore_errors = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "function" # Добавлено для устранения PytestDeprecationWarning
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+xvs_info = true
 
 [tool.coverage.run]
+source = ["price_monitoring", "common"]
 omit = [
     "*tests*",
     "*/abstract_*.py",
@@ -62,14 +80,43 @@ omit = [
     "price_monitoring/constants.py",
     "price_monitoring/tracer.py",
 ]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError",
+    "@abstractmethod",
+]
+precision = 2
+fail_under = 80
+show_missing = true
+
+[tool.coverage.html]
+directory = "coverage_html_report"
 
 [tool.poetry]
 name = "dmarket-price-monitoring"
 version = "0.1.0"
-description = "System for monitoring prices on DMarket"
+description = "System for monitoring prices on DMarket with Telegram bot integration"
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
-package-mode = false # Disable installing the project itself
+license = "MIT"
+repository = "https://github.com/yourusername/dmarket_telegram_bot"
+packages = [
+    { include = "price_monitoring" },
+    { include = "common" }
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -79,8 +126,7 @@ dataclasses-json = "^0.5.7"
 marshmallow-dataclass = "^8.5.8"
 marshmallow = "^3.16.0"
 marshmallow-enum = "^1.5.1"
-aioredis = "==2.0.0"  # Закрепляем версию
-aioredis-lock = "^0.1.0"
+aioredis = "2.0.0"
 aiohttp = "^3.9.0"
 aiohttp-socks = "^0.7.1"
 PySocks = "^1.7.1"
@@ -90,14 +136,11 @@ PyYAML = "^6.0"
 aiozipkin = "^1.1.1"
 orjson = "^3.7.2"
 Brotli = "^1.1.0"
-uvloop = { version = "^0.16.0", optional = true }
 asyncpg = "0.29.0"
-
-[tool.poetry.extras]
-linux = ["uvloop"]
+python-dotenv = "^0.20.0"
+pydantic = "^2.4.1"
 
 [tool.poetry.group.dev.dependencies]
-# Перенесённые зависимости из устаревшего раздела
 aioresponses = "^0.7.3"
 pytest = "^8.3.5"
 pytest-asyncio = "^0.26.0"
@@ -110,7 +153,6 @@ line-profiler = "^4.0"
 line-profiler-pycharm = "^1.1.0"
 mypy = "^1.15.0"
 types-PyYAML = "^6.0.7"
-python-dotenv = "^0.20.0"
 seaborn = "^0.11.2"
 matplotlib = "^3.5.2"
 notebook = "^6.4.12"
@@ -118,7 +160,6 @@ black = "^25.1.0"
 pre-commit = "^4.2.0"
 sortedcontainers = "^2.4.0"
 pytest-mock = "^3.12.0"
-# Добавленные ранее типы
 types-requests = "^2.32.0.20250328"
 types-redis = "^4.6.0.20241004"
 bandit = "^1.8.3"
@@ -134,7 +175,29 @@ isort = "^6.0.1"
 pytest-cov = "^6.1.1"
 safety = "^3.3.1"
 ruff = "^0.11.6"
+sphinx = "^8.2.3"
+sphinx-rtd-theme = "^3.0.2"
+sphinx-autodoc-typehints = "^3.1.0"
+
+[tool.poetry.group.linux]
+optional = true
+
+[tool.poetry.group.linux.dependencies]
+uvloop = "^0.16.0"
+
+[tool.poetry.scripts]
+start = "price_monitoring.main:main"
+worker = "price_monitoring.worker:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+select = ["E", "F", "B", "Q", "I", "C90", "C4", "A", "COM", "INP"]
+ignore = ["E203", "E501"]
+
+[tool.ruff.isort]
+known-first-party = ["price_monitoring", "common"]

@@ -1,19 +1,18 @@
-"""
-Модуль содержит типовые алиасы, используемые в системе мониторинга цен.
+"""Moдyл' coдepжut tunoвbie aлuacbi, ucnoл'3yembie в cucteme mohutopuhra цeh.
 
-Эти типы обеспечивают единообразие в представлении данных во всей системе
-и упрощают типизацию переменных и функций.
+Эtu tunbi o6ecneчuвaюt eдuhoo6pa3ue в npeдctaвлehuu дahhbix вo вceй cucteme
+u ynpoщaюt tunu3aцuю nepemehhbix u фyhkцuй.
 """
 
 from typing import TypeAlias
 
-# Основные типы, используемые в работе с маркетплейсами
-MarketName: TypeAlias = str  # Имя предмета на рынке
+# Ochoвhbie tunbi, ucnoл'3yembie в pa6ote c mapketnлeйcamu
+MarketName: TypeAlias = str  # Иmя npeдmeta ha pbihke
 
-# Типы для работы с DMarket API
-# Эти типы подготовлены для использования в будущих версиях системы
-NameId: TypeAlias = int  # Идентификатор имени предмета в DMarket
-ItemNameId: TypeAlias = int  # Идентификатор предмета на рынке DMarket
-OrderPrice: TypeAlias = float | None  # Цена заказа или None если заказа нет
-# Кортеж с ценами ордеров на покупку и продажу
+# Tunbi для pa6otbi c DMarket API
+# Эtu tunbi noдrotoвлehbi для ucnoл'3oвahuя в 6yдyщux вepcuяx cuctembi
+NameId: TypeAlias = int  # Идehtuфukatop umehu npeдmeta в DMarket
+ItemNameId: TypeAlias = int  # Идehtuфukatop npeдmeta ha pbihke DMarket
+OrderPrice: TypeAlias = float | None  # Цeha 3aka3a uлu None ecлu 3aka3a het
+# Kopteж c цehamu opдepoв ha nokynky u npoдaжy
 BuySellOrders: TypeAlias = tuple[OrderPrice, OrderPrice]

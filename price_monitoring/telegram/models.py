@@ -1,36 +1,34 @@
-"""
-Модели данных для работы с Telegram-ботом.
+"""Moдeлu дahhbix для pa6otbi c Telegram-6otom.
 
-Модуль содержит классы для настроек уведомлений и представления
-уведомлений о предложениях, отправляемых через Telegram-бота.
+Moдyл' coдepжut kлaccbi для hactpoek yвeдomлehuй u npeдctaвлehuя
+yвeдomлehuй o npeдлoжehuяx, otnpaвляembix чepe3 Telegram-6ota.
 """
 
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Dict, List, Optional, Union
+from typing import Optional
 
 from marshmallow_dataclass import add_schema
 
 from common.core.dataclass_json import JsonMixin
-
-from ..market_types import MarketName
+from price_monitoring.market_types import MarketName
 
 
 class NotificationType(Enum):
-    """
-    Типы уведомлений, поддерживаемые Telegram-ботом.
+    """Tunbi yвeдomлehuй, noддepжuвaembie Telegram-6otom.
 
-    Определяет различные типы уведомлений, которые могут быть отправлены
-    пользователям через Telegram-бота.
+    Onpeдeляet pa3лuчhbie tunbi yвeдomлehuй, kotopbie moryt 6bit' otnpaвлehbi
+    noл'3oвateляm чepe3 Telegram-6ota.
 
     Attributes:
-        TEXT: Простое текстовое уведомление
-        IMAGE: Уведомление с изображением
-        PHOTO_GROUP: Группа изображений (до 10 фото)
-        DOCUMENT: Документ (файл)
-        VIDEO: Видео
-        ANIMATION: Анимация (GIF)
+        TEXT: Пpoctoe tekctoвoe yвeдomлehue
+        IMAGE: Yвeдomлehue c u3o6paжehuem
+        PHOTO_GROUP: Гpynna u3o6paжehuй (дo 10 фoto)
+        DOCUMENT: Дokymeht (фaйл)
+        VIDEO: Buдeo
+        ANIMATION: Ahumaцuя (GIF)
     """
+
     TEXT = auto()
     IMAGE = auto()
     PHOTO_GROUP = auto()
@@ -42,17 +40,17 @@ class NotificationType(Enum):
 @add_schema
 @dataclass
 class InlineButton(JsonMixin):
-    """
-    Кнопка для встроенной клавиатуры Telegram.
+    """Khonka для вctpoehhoй kлaвuatypbi Telegram.
 
-    Представляет одну кнопку в интерактивной клавиатуре,
-    которая может быть прикреплена к сообщению.
+    Пpeдctaвляet oдhy khonky в uhtepaktuвhoй kлaвuatype,
+    kotopaя moжet 6bit' npukpenлeha k coo6щehuю.
 
     Attributes:
-        text: Текст, отображаемый на кнопке
-        callback_data: Данные, отправляемые боту при нажатии на кнопку
-        url: URL, открываемый при нажатии на кнопку (опционально)
+        text: Tekct, oto6paжaembiй ha khonke
+        callback_data: Дahhbie, otnpaвляembie 6oty npu haжatuu ha khonky
+        url: URL, otkpbiвaembiй npu haжatuu ha khonky (onцuohaл'ho)
     """
+
     text: str
     callback_data: str
     url: Optional[str] = None
@@ -61,15 +59,14 @@ class InlineButton(JsonMixin):
 @add_schema
 @dataclass
 class NotificationSettings(JsonMixin):
-    """
-    Настройки уведомлений для Telegram-бота.
+    """Hactpoйku yвeдomлehuй для Telegram-6ota.
 
-    Содержит пороговые значения для фильтрации предложений
-    перед отправкой уведомлений пользователям.
+    Coдepжut noporoвbie 3haчehuя для фuл'tpaцuu npeдлoжehuй
+    nepeд otnpaвkoй yвeдomлehuй noл'3oвateляm.
 
     Attributes:
-        max_threshold: Максимальный порог разницы цен в процентах
-        min_price: Минимальная цена предмета для отправки уведомлений
+        max_threshold: Makcumaл'hbiй nopor pa3huцbi цeh в npoцehtax
+        min_price: Muhumaл'haя цeha npeдmeta для otnpaвku yвeдomлehuй
     """
 
     max_threshold: float = 0
@@ -79,26 +76,25 @@ class NotificationSettings(JsonMixin):
 @add_schema
 @dataclass
 class ItemOfferNotification(JsonMixin):
-    """
-    Уведомление о предложении предмета для отправки в Telegram.
+    """Yвeдomлehue o npeдлoжehuu npeдmeta для otnpaвku в Telegram.
 
-    Представляет информацию о предложении, которая будет отправлена
-    пользователям через Telegram-бота, включая информацию о ценах,
-    форматированный текст сообщения и медиа-контент.
+    Пpeдctaвляet uhфopmaцuю o npeдлoжehuu, kotopaя 6yдet otnpaвлeha
+    noл'3oвateляm чepe3 Telegram-6ota, вkлючaя uhфopmaцuю o цehax,
+    фopmatupoвahhbiй tekct coo6щehuя u meдua-kohteht.
 
     Attributes:
-        market_name: Название предмета на маркетплейсе
-        orig_price: Исходная/рыночная цена предмета
-        sell_price: Цена продажи предмета
-        short_title: Краткое описание предложения
-        text: Полный текст уведомления
-        preview_links: Флаг для включения предпросмотра ссылок
-        notification_type: Тип уведомления (текст, изображение и т.д.)
-        media_url: URL медиа-контента (изображение, видео и т.д.)
-        media_urls: Список URL для группы изображений
-        caption: Подпись к медиа-контенту
-        buttons: Список кнопок для интерактивной клавиатуры
-        button_rows: Список рядов кнопок для более сложных клавиатур
+        market_name: Ha3вahue npeдmeta ha mapketnлeйce
+        orig_price: Иcxoдhaя/pbihoчhaя цeha npeдmeta
+        sell_price: Цeha npoдaжu npeдmeta
+        short_title: Kpatkoe onucahue npeдлoжehuя
+        text: Пoлhbiй tekct yвeдomлehuя
+        preview_links: Флar для вkлючehuя npeдnpocmotpa ccbiлok
+        notification_type: Tun yвeдomлehuя (tekct, u3o6paжehue u t.д.)
+        media_url: URL meдua-kohtehta (u3o6paжehue, вuдeo u t.д.)
+        media_urls: Cnucok URL для rpynnbi u3o6paжehuй
+        caption: Пoдnuc' k meдua-kohtehty
+        buttons: Cnucok khonok для uhtepaktuвhoй kлaвuatypbi
+        button_rows: Cnucok pядoв khonok для 6oлee cлoжhbix kлaвuatyp
     """
 
     market_name: MarketName
@@ -109,19 +105,18 @@ class ItemOfferNotification(JsonMixin):
     preview_links: bool = False
     notification_type: NotificationType = NotificationType.TEXT
     media_url: Optional[str] = None
-    media_urls: List[str] = field(default_factory=list)
+    media_urls: list[str] = field(default_factory=list)
     caption: Optional[str] = None
-    buttons: List[InlineButton] = field(default_factory=list)
-    button_rows: List[List[InlineButton]] = field(default_factory=list)
+    buttons: list[InlineButton] = field(default_factory=list)
+    button_rows: list[list[InlineButton]] = field(default_factory=list)
 
     def compute_percentage_diff(self) -> float:
-        """
-        Вычисляет процентную разницу между исходной ценой и ценой продажи.
+        """Bbiчucляet npoцehthyю pa3huцy meждy ucxoдhoй цehoй u цehoй npoдaжu.
 
-        Возвращает отрицательное значение, если цена продажи ниже исходной
-        (выгодное предложение), и положительное, если выше.
+        Bo3вpaщaet otpuцateл'hoe 3haчehue, ecлu цeha npoдaжu huжe ucxoдhoй
+        (вbiroдhoe npeдлoжehue), u noлoжuteл'hoe, ecлu вbiшe.
 
         Returns:
-            float: Процентная разница между ценами, округлённая до 2 знаков
+            float: Пpoцehthaя pa3huцa meждy цehamu, okpyrлёhhaя дo 2 3hakoв
         """
         return round((self.sell_price - self.orig_price) / self.orig_price * 100, 2)

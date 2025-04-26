@@ -1,8 +1,7 @@
-"""
-Модуль для работы с прокси-серверами.
+"""Module for working with proxy servers.
 
-Предоставляет классы для хранения информации о прокси-серверах и
-функциональность для работы с ними в HTTP-запросах.
+Provides classes for storing information about proxy servers and
+functionality for working with them in HTTP requests.
 """
 
 import logging
@@ -20,33 +19,31 @@ logger = logging.getLogger(__name__)
 @add_schema
 @dataclass
 class Proxy(JsonMixin):
-    """
-    Класс, представляющий прокси-сервер.
+    """Class representing a proxy server.
 
-    Хранит информацию о прокси-сервере, включая хост, порт,
-    учетные данные для авторизации и протокол.
+    Stores information about a proxy server, including host, port,
+    authentication credentials, and protocol.
 
     Attributes:
-        host: Хост прокси-сервера
-        port: Порт прокси-сервера
-        login: Логин для авторизации на прокси-сервере
-        password: Пароль для авторизации на прокси-сервере
-        protocol: Протокол прокси-сервера (http, socks5 и т.д.)
-        proxy_str: Строка с параметрами прокси для быстрой инициализации
+        host: Proxy server host
+        port: Proxy server port
+        login: Login for proxy server authentication
+        password: Password for proxy server authentication
+        protocol: Proxy server protocol (http, socks5, etc.)
+        proxy_str: Proxy parameters string for quick initialization
     """
 
     class Meta:
-        """
-        Мета-класс для настройки сериализации.
+        """Meta-class for serialization configuration.
 
-        Примечание: Этот класс необходим для интеграции с marshmallow
-        и управления порядком полей при сериализации объекта Proxy.
-        В будущих версиях может использоваться для расширения
-        функциональности сериализации.
+        Note: This class is necessary for integration with marshmallow
+        and managing the order of fields when serializing a Proxy object.
+        In future versions, it may be used to extend
+        serialization functionality.
 
         Attributes:
-            ordered: Флаг, указывающий на необходимость сохранения
-                    порядка полей при сериализации
+            ordered: Flag indicating the need to preserve
+                    the order of fields during serialization
         """
 
         ordered = True
@@ -59,26 +56,25 @@ class Proxy(JsonMixin):
     proxy_str: Optional[str] = field(default=None, repr=False, compare=False)
 
     def __post_init__(self):
-        """Инициализирует прокси из строки, если она предоставлена."""
+        """Initialize proxy from string if provided."""
         if self.proxy_str:
             self.deserialize(self.proxy_str)
 
     def get_identifier(self) -> str:
-        """
-        Возвращает уникальный идентификатор прокси.
+        """Return a unique proxy identifier.
 
-        Примечание: Этот метод используется для идентификации прокси-серверов
-        в системе кэширования и ограничения одновременных подключений.
-        В будущих версиях может быть расширен для поддержки более сложных
-        схем идентификации.
+        Note: This method is used to identify proxy servers
+        in the caching system and limiting simultaneous connections.
+        In future versions, it may be extended to support more complex
+        identification schemes.
 
         Returns:
-            Строка, уникально идентифицирующая прокси-сервер
+            String uniquely identifying the proxy server
         """
         return f"{self.host}:{self.port}"
 
     def _build_proxy_url(self):
-        """Создает URL для подключения к прокси."""
+        """Create URL for connecting to the proxy."""
         url = ""
         if self.login and self.password:
             url += f"{self.login}:{self.password}@"
@@ -86,14 +82,13 @@ class Proxy(JsonMixin):
         return url
 
     def deserialize(self, s: str) -> bool:
-        """
-        Инициализирует объект из строки с URL прокси.
+        """Initialize object from a proxy URL string.
 
         Args:
-            s: URL прокси в формате "[протокол://][логин:пароль@]хост:порт"
+            s: Proxy URL in format "[protocol://][login:password@]host:port"
 
         Returns:
-            True в случае успеха, False при ошибке парсинга
+            True on success, False on parsing error
         """
         try:
             if "//" not in s:
@@ -108,7 +103,7 @@ class Proxy(JsonMixin):
             self.password = result.password
             return True
         except Exception as e:
-            # Обрабатываем любую ошибку при парсинге прокси
+            # Handle any error when parsing proxy
             logger.warning(f"Failed to parse proxy URL: {e}")
             self.protocol = None
             self.host = None
@@ -118,23 +113,21 @@ class Proxy(JsonMixin):
             return False
 
     def serialize(self):
-        """
-        Преобразует объект в строку URL прокси.
+        """Convert object to proxy URL string.
 
         Returns:
-            URL прокси в формате "протокол://[логин:пароль@]хост:порт"
+            Proxy URL in format "protocol://[login:password@]host:port"
         """
         return f"{self.protocol}://{self._build_proxy_url()}"
 
     def __eq__(self, other):
-        """
-        Сравнивает два объекта прокси.
+        """Compare two proxy objects.
 
         Args:
-            other: Другой объект для сравнения
+            other: Another object to compare
 
         Returns:
-            True, если объекты представляют один и тот же прокси-сервер
+            True if objects represent the same proxy server
         """
         if not isinstance(other, Proxy):
             return False
@@ -146,19 +139,17 @@ class Proxy(JsonMixin):
         )
 
     def __repr__(self):
-        """
-        Представляет объект в виде строки для отладки.
+        """Represent object as a string for debugging.
 
         Returns:
-            Строка с хостом и портом прокси
+            String with proxy host and port
         """
         return f"{self.host}:{self.port}"
 
     def __str__(self):
-        """
-        Преобразует объект в строку.
+        """Convert object to string.
 
         Returns:
-            URL прокси в формате "протокол://[логин:пароль@]хост:порт"
+            Proxy URL in format "protocol://[login:password@]host:port"
         """
         return f"{self.protocol}://{self._build_proxy_url()}"

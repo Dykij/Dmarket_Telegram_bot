@@ -1,7 +1,7 @@
 from aiogram import types
 
-from ..abstract_command import AbstractCommand
-from ..abstract_settings import AbstractSettings
+from price_monitoring.telegram.bot.abstract_command import AbstractCommand
+from price_monitoring.telegram.bot.abstract_settings import AbstractSettings
 
 _COMMAND = "settings"
 

@@ -1,69 +1,63 @@
-"""
-Модуль для управления ограничением одновременных подключений к прокси.
+"""Module for managing limitation of simultaneous connections to proxies.
 
-Предоставляет механизмы для ограничения количества одновременных
-HTTP-запросов через прокси-серверы, что позволяет избежать блокировок
-и повысить стабильность работы системы.
+Provides mechanisms for limiting the number of simultaneous
+HTTP requests through proxy servers, which helps avoid blocks
+and improves system stability.
 """
 
 import asyncio
 from asyncio import Lock
 from time import time
-from typing import List
 
 from aiohttp import ClientSession
 
 
 class NoAvailableSessionError(Exception):
-    """Исключение, возникающее при отсутствии доступных сессий."""
-
+    """Exception raised when no available sessions exist."""
 
 
 class AsyncSessionConcurrentLimiter:
-    """
-    Ограничитель количества одновременных HTTP-сессий.
+    """Limiter for the number of simultaneous HTTP sessions.
 
-    Управляет доступом к набору сессий, предотвращая их перегрузку
-    и обеспечивая равномерное распределение запросов.
+    Manages access to a set of sessions, preventing their overload
+    and ensuring even distribution of requests.
 
-    Примечание: Этот класс подготовлен для использования в будущих версиях
-    системы при расширении функциональности работы с прокси-серверами.
+    Note: This class is prepared for use in future versions
+    of the system when expanding functionality for working with proxy servers.
 
     Attributes:
-        _sessions: Словарь сессий и времени, когда они будут доступны
-        _lock: Блокировка для синхронизации доступа к сессиям
+        _sessions: Dictionary of sessions and times when they will be available
+        _lock: Lock for synchronizing access to sessions
     """
 
-    def __init__(self, sessions: List[ClientSession], timestamp: float):
-        """
-        Инициализирует ограничитель с указанными сессиями.
+    def __init__(self, sessions: list[ClientSession], timestamp: float):
+        """Initialize the limiter with specified sessions.
 
         Args:
-            sessions: Список сессий для управления
-            timestamp: Начальное время доступности всех сессий
+            sessions: List of sessions to manage
+            timestamp: Initial availability time for all sessions
         """
         self._sessions = dict.fromkeys(sessions, timestamp)
         self._lock = Lock()
 
     async def get_available(self, postpone_duration: float) -> ClientSession:
-        """
-        Получает доступную сессию и откладывает ее использование.
+        """Get an available session and postpone its use.
 
-        Блокирует вызывающую сторону до тех пор, пока не появится
-        доступная сессия. После получения сессии, она будет недоступна
-        для других запросов в течение указанного времени.
+        Blocks the caller until an available session appears.
+        After obtaining a session, it will be unavailable
+        for other requests for the specified time.
 
-        Примечание: Этот метод используется для справедливого распределения
-        нагрузки между прокси-серверами и предотвращения их блокировки.
+        Note: This method is used for fair distribution
+        of load between proxy servers and preventing their blocking.
 
         Args:
-            postpone_duration: Время блокировки сессии в секундах
+            postpone_duration: Session blocking time in seconds
 
         Returns:
-            Доступная сессия ClientSession
+            Available ClientSession
 
         Raises:
-            NoAvailableSessionError: Если нет доступных сессий
+            NoAvailableSessionError: If no available sessions
         """
         while True:
             try:
@@ -73,19 +67,18 @@ class AsyncSessionConcurrentLimiter:
                 await asyncio.sleep(0.1)
 
     def _get_available_no_wait(self, timestamp: float, postpone_duration: float) -> ClientSession:
-        """
-        Получает доступную сессию без ожидания.
+        """Get an available session without waiting.
 
         Args:
-            timestamp: Текущее время
-            postpone_duration: Длительность в секундах, на которую
-                               сессия будет недоступна
+            timestamp: Current time
+            postpone_duration: Duration in seconds for which
+                               the session will be unavailable
 
         Returns:
-            Доступная сессия ClientSession
+            Available ClientSession
 
         Raises:
-            NoAvailableSessionError: Если нет доступных сессий
+            NoAvailableSessionError: If no available sessions
         """
         for session in self._sessions:
             if timestamp > self._sessions[session]:
@@ -94,15 +87,14 @@ class AsyncSessionConcurrentLimiter:
         raise NoAvailableSessionError
 
     def _postpone(self, session: ClientSession, timestamp: float):
-        """
-        Откладывает использование сессии до указанного времени.
+        """Postpone the use of a session until the specified time.
 
         Args:
-            session: Сессия для откладывания
-            timestamp: Время, до которого сессия будет недоступна
+            session: Session to postpone
+            timestamp: Time until which the session will be unavailable
 
         Raises:
-            NoAvailableSessionError: Если сессия не найдена
+            NoAvailableSessionError: If session not found
         """
         try:
             self._sessions[session] = timestamp

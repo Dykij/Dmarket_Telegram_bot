@@ -9,63 +9,76 @@ logger = logging.getLogger(__name__)
 
 
 class UserSettingsStorage:
-    """
-    Класс для хранения и управления настройками пользователей в Redis.
+    """Class for storing and managing user settings in Redis.
 
-    Позволяет сохранять и получать настройки пользователей между сессиями,
-    такие как:
-    - выбранный режим
-    - настройки фильтров (минимальная и максимальная прибыль)
-    - выбранные игры
+    Allows saving and retrieving user settings between sessions,
+    such as:
+    - selected mode
+    - filter settings (minimum and maximum profit)
+    - selected games
+    - language preferences
 
     Attributes:
-        _redis: Клиент Redis для работы c базой данных
-        _key_prefix: Префикс ключей для настроек пользователей
-        _ttl: Время жизни (в секундах) для настроек пользователей
-            (по умолчанию 7 дней)
+        _redis: Redis client for working with the database
+        _key_prefix: Prefix for user settings keys
+        _ttl: Time to live (in seconds) for user settings
+             (default is 7 days)
+        _default_settings: Default settings for new users
     """
 
     def __init__(
-        self, redis_client: redis.Redis, key_prefix: str = "user_settings:", ttl: int = 604800
+        self,
+        redis_client: redis.Redis,
+        key_prefix: str = "user_settings:",
+        ttl: int = 604800,
+        default_settings: Optional[dict[str, Any]] = None,
     ):
-        """
-        Инициализация хранилища настроек пользователей.
+        """Initialize the user settings storage.
 
         Args:
-            redis_client: Клиент Redis для работы c базой данных
-            key_prefix: Префикс ключей для настроек пользователей
-            ttl: Время жизни (в секундах) для настроек пользователей
-                (по умолчанию 7 дней)
+            redis_client: Redis client for working with the database
+            key_prefix: Prefix for user settings keys
+            ttl: Time to live (in seconds) for user settings
+                (default is 7 days)
+            default_settings: Default settings for new users
         """
         self._redis = redis_client
         self._key_prefix = key_prefix
         self._ttl = ttl
+        self._default_settings = default_settings or {
+            "language": "en",
+            "min_profit": 5.0,
+            "max_profit": 1000.0,
+            "selected_games": [],
+            "notifications_enabled": True,
+            "theme": "light",
+        }
+        # Set of keys that should be persisted even on reset
+        self._persistent_keys: set[str] = {"language", "theme"}
 
     def _get_key(self, user_id: int) -> str:
-        """
-        Формирует ключ Redis для хранения настроек пользователя.
+        """Forms a Redis key for storing user settings.
 
         Args:
-            user_id: ID пользователя в Telegram
+            user_id: User's Telegram ID
 
         Returns:
-            Строка ключа для Redis
+            Redis key string
         """
         return f"{self._key_prefix}{user_id}"
 
     async def save_settings(self, user_id: int, settings: dict[str, Any]) -> bool:
-        """
-        Сохраняет настройки пользователя в Redis.
+        """Saves user settings to Redis.
 
         Args:
-            user_id: ID пользователя в Telegram
-            settings: Словарь c настройками пользователя
+            user_id: User's Telegram ID
+            settings: Dictionary with user settings
 
         Returns:
-            True если сохранение успешно, иначе False
+            True if saving was successful, otherwise False
 
         Raises:
-            RedisError: Если произошла ошибка при работе c Redis
+            RedisError: If there was an error working with Redis
         """
         key = self._get_key(user_id)
         try:
@@ -82,17 +95,16 @@ class UserSettingsStorage:
             return False
 
     async def get_settings(self, user_id: int) -> Optional[dict[str, Any]]:
-        """
-        Получает настройки пользователя из Redis.
+        """Gets user settings from Redis.
 
         Args:
-            user_id: ID пользователя в Telegram
+            user_id: User's Telegram ID
 
         Returns:
-            Словарь c настройками пользователя или None, если настройки не найдены
+            Dictionary with user settings or None if settings not found
 
         Raises:
-            RedisError: Если произошла ошибка при работе c Redis
+            RedisError: If there was an error working with Redis
         """
         key = self._get_key(user_id)
         try:
@@ -112,46 +124,90 @@ class UserSettingsStorage:
                 raise error
             return None
 
-    async def update_setting(self, user_id: int, key: str, value: Any) -> bool:
-        """
-        Обновляет отдельную настройку пользователя.
+    async def get_or_create_settings(self, user_id: int) -> dict[str, Any]:
+        """Gets user settings or creates default settings if they don't exist.
 
         Args:
-            user_id: ID пользователя в Telegram
-            key: Ключ настройки для обновления
-            value: Новое значение настройки
+            user_id: User's Telegram ID
 
         Returns:
-            True если обновление успешно, иначе False
+            Dictionary with user settings (existing or default)
+
+        Raises:
+            RedisError: If there was an error working with Redis
+        """
+        settings = await self.get_settings(user_id)
+        if settings is None:
+            settings = self._default_settings.copy()
+            await self.save_settings(user_id, settings)
+            logger.info(f"Created default settings for user {user_id}")
+        return settings
+
+    async def update_setting(self, user_id: int, key: str, value: Any) -> bool:
+        """Updates a single user setting.
+
+        Args:
+            user_id: User's Telegram ID
+            key: Setting key to update
+            value: New setting value
+
+        Returns:
+            True if update was successful, otherwise False
         """
         try:
-            # Получаем текущие настройки
-            settings = await self.get_settings(user_id) or {}
+            # Get current settings or create default ones
+            settings = await self.get_or_create_settings(user_id)
 
-            # Обновляем настройку
+            # Update the setting
             settings[key] = value
 
-            # Сохраняем обновленные настройки
+            # Save updated settings
             return await self.save_settings(user_id, settings)
         except RedisError as error:
             err_msg = f"Failed to update setting '{key}' for user {user_id}. Error: {error}"
             logger.error(err_msg, exc_info=True)
             return False
 
-    async def get_setting(self, user_id: int, key: str, default: Any = None) -> Any:
-        """
-        Получает значение отдельной настройки пользователя.
+    async def update_settings(self, user_id: int, new_settings: dict[str, Any]) -> bool:
+        """Updates multiple user settings at once.
 
         Args:
-            user_id: ID пользователя в Telegram
-            key: Ключ настройки
-            default: Значение по умолчанию, если настройка не найдена
+            user_id: User's Telegram ID
+            new_settings: Dictionary with settings to update
 
         Returns:
-            Значение настройки или default, если настройка не найдена
+            True if update was successful, otherwise False
         """
         try:
-            settings = await self.get_settings(user_id) or {}
+            # Get current settings or create default ones
+            settings = await self.get_or_create_settings(user_id)
+
+            # Update settings
+            settings.update(new_settings)
+
+            # Save updated settings
+            return await self.save_settings(user_id, settings)
+        except RedisError as error:
+            err_msg = f"Failed to update settings for user {user_id}. Error: {error}"
+            logger.error(err_msg, exc_info=True)
+            return False
+
+    async def get_setting(self, user_id: int, key: str, default: Any = None) -> Any:
+        """Gets the value of a single user setting.
+
+        Args:
+            user_id: User's Telegram ID
+            key: Setting key
+            default: Default value if setting is not found
+
+        Returns:
+            Setting value or default if setting is not found
+        """
+        try:
+            settings = await self.get_settings(user_id)
+            if settings is None:
+                # If user has no settings yet, return from default settings or provided default
+                return self._default_settings.get(key, default)
             return settings.get(key, default)
         except RedisError as error:
             err_msg = f"Failed to get setting '{key}' for user {user_id}. Error: {error}"
@@ -159,14 +215,13 @@ class UserSettingsStorage:
             return default
 
     async def delete_settings(self, user_id: int) -> bool:
-        """
-        Удаляет все настройки пользователя.
+        """Deletes all user settings.
 
         Args:
-            user_id: ID пользователя в Telegram
+            user_id: User's Telegram ID
 
         Returns:
-            True если удаление успешно, иначе False
+            True if deletion was successful, otherwise False
         """
         key = self._get_key(user_id)
         try:
@@ -181,3 +236,199 @@ class UserSettingsStorage:
             err_msg = f"Failed to delete settings for user {user_id}. Error: {error}"
             logger.error(err_msg, exc_info=True)
             return False
+
+    async def reset_settings(self, user_id: int, preserve_persistent: bool = True) -> bool:
+        """Resets user settings to default values.
+
+        Args:
+            user_id: User's Telegram ID
+            preserve_persistent: Whether to preserve persistent settings like language
+
+        Returns:
+            True if reset was successful, otherwise False
+        """
+        try:
+            current_settings = await self.get_settings(user_id)
+            new_settings = self._default_settings.copy()
+
+            # Preserve persistent settings if needed
+            if preserve_persistent and current_settings:
+                for key in self._persistent_keys:
+                    if key in current_settings:
+                        new_settings[key] = current_settings[key]
+
+            # Save new settings
+            success = await self.save_settings(user_id, new_settings)
+            if success:
+                logger.info(f"Reset settings for user {user_id} to defaults")
+            return success
+        except RedisError as error:
+            err_msg = f"Failed to reset settings for user {user_id}. Error: {error}"
+            logger.error(err_msg, exc_info=True)
+            return False
+
+    async def get_users_with_setting(self, key: str, value: Any = None) -> list[int]:
+        """Gets a list of user IDs that have a specific setting value.
+
+        Args:
+            key: Setting key to check
+            value: Setting value to match (if None, matches any value for the key)
+
+        Returns:
+            List of user IDs
+        """
+        try:
+            # Get all keys matching the prefix
+            pattern = f"{self._key_prefix}*"
+            keys = await self._redis.keys(pattern)
+
+            matching_user_ids = []
+
+            for key_bytes in keys:
+                key_str = key_bytes.decode("utf-8")
+                user_id = int(key_str.replace(self._key_prefix, ""))
+
+                settings = await self.get_settings(user_id)
+                if settings and key in settings:
+                    if value is None or settings[key] == value:
+                        matching_user_ids.append(user_id)
+
+            return matching_user_ids
+        except (RedisError, ValueError) as error:
+            logger.error(f"Failed to get users with setting '{key}': {error}", exc_info=True)
+            return []
+
+    # Integration with i18n system
+
+    async def get_user_language(self, user_id: int, default_language: str = "en") -> str:
+        """Gets user's preferred language.
+
+        Args:
+            user_id: User's Telegram ID
+            default_language: Default language if not set
+
+        Returns:
+            Language code (e.g., 'en', 'ru')
+        """
+        return await self.get_setting(user_id, "language", default_language)
+
+    async def set_user_language(self, user_id: int, language: str) -> bool:
+        """Sets user's preferred language.
+
+        Args:
+            user_id: User's Telegram ID
+            language: Language code (e.g., 'en', 'ru')
+
+        Returns:
+            True if successful, otherwise False
+        """
+        return await self.update_setting(user_id, "language", language)
+
+    async def get_users_by_language(self, language: str) -> list[int]:
+        """Gets a list of users who have selected a specific language.
+
+        Args:
+            language: Language code (e.g., 'en', 'ru')
+
+        Returns:
+            List of user IDs
+        """
+        return await self.get_users_with_setting("language", language)
+
+    async def reset_settings(self, user_id: int, preserve_persistent: bool = True) -> bool:
+        """Resets user settings to default values.
+
+        Args:
+            user_id: User's Telegram ID
+            preserve_persistent: Whether to preserve persistent settings like language
+
+        Returns:
+            True if reset was successful, otherwise False
+        """
+        try:
+            current_settings = await self.get_settings(user_id)
+            new_settings = self._default_settings.copy()
+
+            # Preserve persistent settings if needed
+            if preserve_persistent and current_settings:
+                for key in self._persistent_keys:
+                    if key in current_settings:
+                        new_settings[key] = current_settings[key]
+
+            # Save new settings
+            success = await self.save_settings(user_id, new_settings)
+            if success:
+                logger.info(f"Reset settings for user {user_id} to defaults")
+            return success
+        except RedisError as error:
+            err_msg = f"Failed to reset settings for user {user_id}. Error: {error}"
+            logger.error(err_msg, exc_info=True)
+            return False
+
+    async def get_users_with_setting(self, key: str, value: Any = None) -> list[int]:
+        """Gets a list of user IDs that have a specific setting value.
+
+        Args:
+            key: Setting key to check
+            value: Setting value to match (if None, matches any value for the key)
+
+        Returns:
+            List of user IDs
+        """
+        try:
+            # Get all keys matching the prefix
+            pattern = f"{self._key_prefix}*"
+            keys = await self._redis.keys(pattern)
+
+            matching_user_ids = []
+
+            for key_bytes in keys:
+                key_str = key_bytes.decode("utf-8")
+                user_id = int(key_str.replace(self._key_prefix, ""))
+
+                settings = await self.get_settings(user_id)
+                if settings and key in settings:
+                    if value is None or settings[key] == value:
+                        matching_user_ids.append(user_id)
+
+            return matching_user_ids
+        except (RedisError, ValueError) as error:
+            logger.error(f"Failed to get users with setting '{key}': {error}", exc_info=True)
+            return []
+
+    # Integration with i18n system
+
+    async def get_user_language(self, user_id: int, default_language: str = "en") -> str:
+        """Gets user's preferred language.
+
+        Args:
+            user_id: User's Telegram ID
+            default_language: Default language if not set
+
+        Returns:
+            Language code (e.g., 'en', 'ru')
+        """
+        return await self.get_setting(user_id, "language", default_language)
+
+    async def set_user_language(self, user_id: int, language: str) -> bool:
+        """Sets user's preferred language.
+
+        Args:
+            user_id: User's Telegram ID
+            language: Language code (e.g., 'en', 'ru')
+
+        Returns:
+            True if successful, otherwise False
+        """
+        return await self.update_setting(user_id, "language", language)
+
+    async def get_users_by_language(self, language: str) -> list[int]:
+        """Gets a list of users who have selected a specific language.
+
+        Args:
+            language: Language code (e.g., 'en', 'ru')
+
+        Returns:
+            List of user IDs
+        """
+        return await self.get_users_with_setting("language", language)

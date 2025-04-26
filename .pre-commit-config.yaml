@@ -1,39 +1,92 @@
+# pre-commit configuration file
+# See https://pre-commit.com/ for usage and installation
+
 repos:
-  - repo: local
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
     hooks:
-        - id: mypy
-          name: mypy
-          entry: mypy price_monitoring bot.py csmoney_parser.py steam_parser.py worker.py
-          language: system
-          types: [ python ]
-          pass_filenames: false
-          args:
-            [
-              --config-file=pyproject.toml,
-              --ignore-missing-imports,
-            ]
-  - repo: local
+    -   id: trailing-whitespace
+        exclude: ^(coverage_html_report/|dm-trading-tools-master/)
+    -   id: end-of-file-fixer
+        exclude: ^(coverage_html_report/|dm-trading-tools-master/)
+    -   id: check-yaml
+    -   id: check-toml
+    -   id: check-json
+    -   id: check-case-conflict
+    -   id: check-added-large-files
+        args: ['--maxkb=1000']
+    -   id: check-merge-conflict
+    -   id: detect-private-key
+    -   id: mixed-line-ending
+        args: [--fix=lf]
+        exclude: \.bat$
+    -   id: no-commit-to-branch
+        args: [--branch, main, --branch, master]
+
+-   repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: 'v0.1.14'
     hooks:
-      - id: black
-        name: black
-        entry: black price_monitoring utils bot.py csmoney_parser.py steam_parser.py worker.py
-        language: system
-        types: [ python ]
-  - repo: local
+    -   id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+    -   id: ruff-format
+
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.7.0
     hooks:
-      - id: pylint
-        name: pylint
-        entry: pylint
-        language: system
-        types: [ python ]
-        args:
-          [
-            "--rcfile=pyproject.toml",
-            "--fail-under=8",
-            "price_monitoring",
-            "utils",
-            "bot.py",
-            "csmoney_parser.py",
-            "steam_parser.py",
-            "worker.py"
-          ]
+    -   id: mypy
+        additional_dependencies: [types-requests, types-PyYAML, types-redis]
+        exclude: ^(dm-trading-tools-master/|tests/)
+        args: [--config-file=mypy.ini]
+
+-   repo: https://github.com/python-poetry/poetry
+    rev: '1.7.0'
+    hooks:
+    -   id: poetry-check
+        name: check poetry configuration
+        description: validate the structure of the pyproject.toml file
+
+-   repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+    -   id: codespell
+        exclude: ^(coverage_html_report/|dm-trading-tools-master/)
+        args: [--skip="*.lock", --quiet-level=2]
+
+-   repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
+    rev: v1.0.6
+    hooks:
+    -   id: python-bandit-vulnerability-check
+        args: [-l, --recursive, --exclude, tests/, -c, pyproject.toml]
+        exclude: ^(tests/|dm-trading-tools-master/)
+
+-   repo: local
+    hooks:
+    -   id: fix-cyrillic
+        name: fix-cyrillic
+        description: Aвtomatuчeckoe ucnpaвлehue kupuллuчeckux cumвoлoв в koдe
+        entry: python fix_cyrillic.py
+        language: python
+        types: [python]
+        exclude: ^(coverage_html_report/|dm-trading-tools-master/)
+        pass_filenames: true
+        stages: [commit]
+
+    -   id: fix-imports
+        name: fix-imports
+        description: Фukcaцuя npo6лem c umnoptamu
+        entry: python fix_imports.py
+        language: python
+        types: [python]
+        exclude: ^(coverage_html_report/|dm-trading-tools-master/)
+        pass_filenames: true
+        stages: [commit]
+
+    -   id: fix-latin
+        name: fix-latin
+        description: Aвtomatuчeckoe ucnpaвлehue лatuhckux cumвoлoв в kommehtapuяx
+        entry: python fix_latin.py
+        language: python
+        types: [python]
+        exclude: ^(coverage_html_report/|dm-trading-tools-master/)
+        pass_filenames: true
+        stages: [commit]

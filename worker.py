@@ -1,5 +1,4 @@
-"""
-DMarket Worker Module
+"""DMarket Worker Module
 
 This module serves as the main worker for processing DMarket data.
 It is responsible for:
@@ -19,31 +18,16 @@ import logging
 from typing import Optional
 
 import aio_pika  # Library for RabbitMQ interaction
-
 from dotenv import load_dotenv
 
 # Import functions to get environment variables
-from common.env_var import (
-    # Environment variables for logging
-    get_log_level,
-
-    # Environment variables for RabbitMQ connection
-    get_rabbitmq_host,
-    get_rabbitmq_password,
-    get_rabbitmq_port,
-    get_rabbitmq_user,
-    get_rabbitmq_virtual_host,
-
-    # Environment variables for Redis connection
-    get_redis_db,
-    get_redis_host,
-    get_redis_port,
-)
+from common.env_var import (  # Environment variables for logging; Environment variables for RabbitMQ connection; Environment variables for Redis connection
+    get_log_level, get_rabbitmq_host, get_rabbitmq_password, get_rabbitmq_port, get_rabbitmq_user,
+    get_rabbitmq_virtual_host, get_redis_db, get_redis_host, get_redis_port)
 # Import connectors for external services
 from common.rabbitmq_connector import RabbitMQConnector
 from common.redis_connector import RedisConnector
 from price_monitoring.logs import setup_logging
-
 # Import the DMarket item model for deserialization
 from price_monitoring.models.dmarket import DMarketItem
 # Import the queue name constant
@@ -66,9 +50,11 @@ logger = logging.getLogger(__name__)
 # TELEGRAM_WHITELIST_STR = get_telegram_whitelist()
 # TELEGRAM_WHITELIST_LIST = TELEGRAM_WHITELIST_STR.split(",") if TELEGRAM_WHITELIST_STR else []
 
-async def process_raw_item_message(message: aio_pika.IncomingMessage, storage: DMarketStorage) -> None:
-    """
-    Process a raw item message from the RabbitMQ queue.
+
+async def process_raw_item_message(
+    message: aio_pika.IncomingMessage, storage: DMarketStorage
+) -> None:
+    """Process a raw item message from the RabbitMQ queue.
 
     This function deserializes the message body into a DMarketItem object
     and saves it to Redis using the provided storage instance.
@@ -97,13 +83,14 @@ async def process_raw_item_message(message: aio_pika.IncomingMessage, storage: D
             logger.info(f"Successfully saved item {item.item_id} ({item.title}) to Redis.")
         except Exception as e:
             # Log the error and truncate the message body to avoid flooding the logs
-            logger.error(f"Failed to process message: {e}. Message body (first 100 bytes): {message.body[:100]}...")
+            logger.error(
+                f"Failed to process message: {e}. Message body (first 100 bytes): {message.body[:100]}..."
+            )
             # Consider moving to a dead-letter queue instead of just logging
 
 
 async def main() -> None:
-    """
-    Main function for running and managing the DMarket worker.
+    """Main function for running and managing the DMarket worker.
 
     This function performs the following actions:
     1. Initializes connections to RabbitMQ and Redis
@@ -130,9 +117,7 @@ async def main() -> None:
 
     # Initialize Redis connector with connection details from environment variables
     redis_connector = RedisConnector(
-        host=get_redis_host(), 
-        port=int(get_redis_port()), 
-        db=int(get_redis_db())
+        host=get_redis_host(), port=int(get_redis_port()), db=int(get_redis_db())
     )
 
     # Initialize variables for resources that need to be cleaned up
@@ -156,7 +141,9 @@ async def main() -> None:
         redis_client = await redis_connector.get_client()
         dmarket_storage = DMarketStorage(redis_client=redis_client)
 
-        logger.info(f"Worker is listening for messages on queue '{DMARKET_RAW_ITEMS_QUEUE_NAME}'...")
+        logger.info(
+            f"Worker is listening for messages on queue '{DMARKET_RAW_ITEMS_QUEUE_NAME}'..."
+        )
 
         # Consume messages from the queue in an infinite loop
         async with queue.iterator() as queue_iter:

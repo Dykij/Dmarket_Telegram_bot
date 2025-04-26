@@ -1,6 +1,7 @@
 from aiogram.fsm.state import State, StatesGroup
 
+
 class FilterStates(StatesGroup):
-    waiting_min_profit = State()  # Ожидание ввода минимальной прибыли
-    waiting_max_profit = State()  # Ожидание ввода максимальной прибыли
-    browsing_offers = State()    # Просмотр предложений с пагинацией 
+    waiting_min_profit = State()  # Oжuдahue ввoдa muhumaл'hoй npu6biлu
+    waiting_max_profit = State()  # Oжuдahue ввoдa makcumaл'hoй npu6biлu
+    browsing_offers = State()  # Пpocmotp npeдлoжehuй c naruhaцueй

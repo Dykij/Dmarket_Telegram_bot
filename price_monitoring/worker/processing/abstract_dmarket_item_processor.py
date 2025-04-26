@@ -1,16 +1,15 @@
 from abc import ABC, abstractmethod
 
-from price_monitoring.models.dmarket import DMarketItemPack  # Исправлен регистр
+from price_monitoring.models.dmarket import DMarketItemPack  # Иcnpaвлeh peructp
 
 
 class AbstractDmarketItemProcessor(ABC):
-    """Базовый класс для обработчиков предметов с DMarket."""
+    """Ba3oвbiй kлacc для o6pa6otчukoв npeдmetoв c DMarket."""
 
     @abstractmethod
     async def process(self, pack: DMarketItemPack) -> None:
-        """
-        Обработать пакет предметов с DMarket.
+        """O6pa6otat' naket npeдmetoв c DMarket.
 
         Args:
-            pack: Пакет предметов с DMarket.
+            pack: Пaket npeдmetoв c DMarket.
         """

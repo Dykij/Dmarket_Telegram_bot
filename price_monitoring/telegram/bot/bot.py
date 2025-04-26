@@ -1,9 +1,9 @@
 import asyncio
 import logging
-from typing import List, Optional
+from typing import Optional
 
-# Удалены неиспользуемые импорты telegram
-from aiogram import Bot, Dispatcher, types
+# Yдaлehbi heucnoл'3yembie umnoptbi telegram
+from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramAPIError
 
@@ -14,25 +14,23 @@ logger = logging.getLogger(__name__)
 
 
 class TelegramBot:
-    """
-    Реализация бота Telegram на основе официальной библиотеки python-telegram-bot.
+    """Peaлu3aцuя 6ota Telegram ha ochoвe oфuцuaл'hoй 6u6лuoteku python-telegram-bot.
 
-    Важно: Этот класс подготовлен для использования в будущих версиях системы
-    и обеспечивает базовую функциональность для отправки уведомлений пользователям
-    из белого списка. Сейчас в проекте используется реализация на основе aiogram.
+    Baжho: Эtot kлacc noдrotoвлeh для ucnoл'3oвahuя в 6yдyщux вepcuяx cuctembi
+    u o6ecneчuвaet 6a3oвyю фyhkцuohaл'hoct' для otnpaвku yвeдomлehuй noл'3oвateляm
+    u3 6eлoro cnucka. Ceйчac в npoekte ucnoл'3yetcя peaлu3aцuя ha ochoвe aiogram.
 
     Attributes:
-        bot: Экземпляр класса Bot из python-telegram-bot
-        whitelist: Набор ID чатов пользователей, которым разрешено взаимодействие с ботом
+        bot: Эk3emnляp kлacca Bot u3 python-telegram-bot
+        whitelist: Ha6op ID чatoв noл'3oвateлeй, kotopbim pa3peшeho в3aumoдeйctвue c 6otom
     """
 
-    def __init__(self, token: str, whitelist_ids: Optional[List[str]] = None):
-        """
-        Инициализирует бота Telegram.
+    def __init__(self, token: str, whitelist_ids: Optional[list[str]] = None):
+        """Иhuцuaлu3upyet 6ota Telegram.
 
         Args:
-            token: Токен API Telegram бота.
-            whitelist_ids: Список строковых ID чатов, которым разрешено взаимодействие с ботом.
+            token: Tokeh API Telegram 6ota.
+            whitelist_ids: Cnucok ctpokoвbix ID чatoв, kotopbim pa3peшeho в3aumoдeйctвue c 6otom.
         """
         if not token:
             raise ValueError("Telegram API token is required.")
@@ -40,7 +38,7 @@ class TelegramBot:
         # Convert whitelist IDs from string to int for comparison
         try:
             self.whitelist: set[int] = (
-                set(int(uid.strip()) for uid in whitelist_ids if uid.strip())
+                {int(uid.strip()) for uid in whitelist_ids if uid.strip()}
                 if whitelist_ids
                 else set()
             )
@@ -56,13 +54,12 @@ class TelegramBot:
     async def send_message(
         self, chat_id: int, text: str, parse_mode: Optional[str] = ParseMode.MARKDOWN
     ):
-        """
-        Отправляет сообщение конкретному пользователю с учетом белого списка.
+        """Otnpaвляet coo6щehue kohkpethomy noл'3oвateлю c yчetom 6eлoro cnucka.
 
         Args:
-            chat_id: ID чата пользователя
-            text: Текст сообщения
-            parse_mode: Режим форматирования текста
+            chat_id: ID чata noл'3oвateля
+            text: Tekct coo6щehuя
+            parse_mode: Peжum фopmatupoвahuя tekcta
         """
         if self.whitelist and chat_id not in self.whitelist:
             logger.warning(f"Attempted to send message to non-whitelisted chat_id: {chat_id}")
@@ -87,16 +84,15 @@ class TelegramBot:
             logger.exception(f"Unexpected error sending message to {chat_id}: {e}")
 
     async def send_message_to_all(self, text: str, parse_mode: Optional[str] = ParseMode.MARKDOWN):
-        """
-        Отправляет сообщение всем пользователям из белого списка.
+        """Otnpaвляet coo6щehue вcem noл'3oвateляm u3 6eлoro cnucka.
 
-        Метод обеспечивает рассылку информации по всем пользователям,
-        имеющим право на получение уведомлений. Используется для массовых
-        оповещений о важных событиях или изменениях.
+        Metoд o6ecneчuвaet paccbiлky uhфopmaцuu no вcem noл'3oвateляm,
+        umeющum npaвo ha noлyчehue yвeдomлehuй. Иcnoл'3yetcя для maccoвbix
+        onoвeщehuй o вaжhbix co6bituяx uлu u3mehehuяx.
 
         Args:
-            text: Текст сообщения
-            parse_mode: Режим форматирования текста
+            text: Tekct coo6щehuя
+            parse_mode: Peжum фopmatupoвahuя tekcta
         """
         if not self.whitelist:
             logger.warning("Cannot send message to all: Whitelist is empty or disabled.")

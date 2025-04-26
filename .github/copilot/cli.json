@@ -1,0 +1,14 @@
+{
+  "inlineSuggestCount": 3,
+  "editContextWindowLines": 20,
+  "temperature": 0.2,
+  "topP": 0.95,
+  "includeSurroundingContext": true,
+  "useTabIndentation": false,
+  "indentationSize": 4,
+  "filesForContextSeeding": [
+    ".github/copilot/examples.md",
+    ".github/copilot/docs.md",
+    ".github/copilot/snippets.md"
+  ]
+}

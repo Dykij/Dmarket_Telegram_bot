@@ -1,0 +1,8 @@
+# Игнорируемые директории для анализа Copilot
+coverage_html_report/
+dm-trading-tools-master/
+__pycache__/
+.venv/
+venv/
+dist/
+build/

@@ -1,9 +1,13 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Testing of the price monitoring
+name: Python Tests & Code Quality
 
-on: [push]
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master, dev ]
 
 jobs:
   build:
@@ -12,30 +16,54 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
       with:
-        python-version: "3.10"
+        python-version: "3.11"
+        
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install poetry
         poetry install --extras linux
-    - name: Coverage and test with pytest
+        
+    - name: Run tests with pytest and coverage
       run: |
-        poetry run coverage run --source=price_monitoring --branch -m pytest tests/
+        poetry run coverage run --source=price_monitoring,common,bot_handlers --branch -m pytest tests/
         poetry run coverage report -m
+        poetry run coverage xml -o coverage.xml
+        
+    - name: Upload coverage report to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false
+    - name: Lint with Ruff
+      if: ${{ success() || failure() }}
+      run: |
+        poetry run ruff check price_monitoring common bot_handlers utils tests
+        
     - name: Lint with pylint
       if: ${{ success() || failure() }}
       run: |
-        poetry run pylint --rcfile pyproject.toml --fail-under 8 price_monitoring utils bot.py csmoney_parser.py steam_parser.py worker.py
-    - name: Run mypy
+        poetry run pylint --rcfile pyproject.toml --fail-under 8 price_monitoring common bot_handlers utils dmarket_parser_main.py worker.py
+        
+    - name: Run mypy type checking
       if: ${{ success() || failure() }}
-      continue-on-error: true
       run: |
-        poetry run mypy --ignore-missing-imports price_monitoring bot.py csmoney_parser.py steam_parser.py worker.py
-    - name: Run black
+        poetry run mypy --config-file mypy.ini price_monitoring common bot_handlers utils dmarket_parser_main.py worker.py
+        
+    - name: Check formatting with Black
       if: ${{ success() || failure() }}
-      continue-on-error: true
       run: |
-        poetry run black --check proxy_http price_monitoring tests utils bot.py csmoney_parser.py steam_parser.py worker.py
+        poetry run black --check --line-length 100 price_monitoring common bot_handlers utils tests dmarket_parser_main.py worker.py
+        
+    - name: Security check with Bandit
+      if: ${{ success() || failure() }}
+      run: |
+        poetry run bandit -r price_monitoring common bot_handlers utils -x tests
+        
+    - name: Security check with Safety
+      if: ${{ success() || failure() }}
+      run: |
+        poetry run safety check

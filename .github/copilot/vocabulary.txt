@@ -1,0 +1,25 @@
+# Терминология DMarket
+dmarket
+csgo
+dota2
+loadout
+skins
+drop
+redux
+asyncio
+aiogram
+aio-pika
+aioredis
+aiohttp
+marshmallow
+aiozipkin
+brotli
+uvloop
+dataclasses-json
+pydantic
+fakeredis
+pytest-asyncio
+proxies
+rabbitmq
+zipkin
+json-logging

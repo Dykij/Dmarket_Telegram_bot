@@ -1,9 +1,10 @@
 from collections.abc import Sequence
+from typing import Optional
 
 from common.tracer import trace
+from price_monitoring.telegram.bot import AbstractSettings
+from price_monitoring.telegram.offers import BaseItemOffer
 
-from ..bot import AbstractSettings
-from ..offers import BaseItemOffer
 from .abstract_offer_provider import AbstractOfferProvider
 
 
@@ -14,7 +15,7 @@ class SettingsBasedProvider(AbstractOfferProvider):
 
     @trace
     async def get_items(
-        self, percentage_limit: float = None, min_price: float = None
+        self, percentage_limit: Optional[float] = None, min_price: Optional[float] = None
     ) -> Sequence[BaseItemOffer]:
         settings = await self.settings_provider.get()
         if not settings:

@@ -2,59 +2,110 @@ version: '3.8'
 
 services:
   rabbitmq:
-    image: rabbitmq:3.11-management
+    image: rabbitmq:3.12-management-alpine
+    container_name: dmarket_rabbitmq
     ports:
       - "5672:5672" # AMQP port
       - "15672:15672" # Management UI port
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq/
     environment:
-      RABBITMQ_DEFAULT_USER: guest # Use defaults from env_var.py getters
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VIRTUAL_HOST:-/}
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   redis:
     image: redis:7-alpine
+    container_name: dmarket_redis
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 3
 
-  dmarket_parser:
+  bot:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: dmarket_bot
+    command: poetry run start
+    volumes:
+      - .:/app
+      - ./utils_mount:/app/utils_mount
     env_file:
-      - dmarket_parser.dev.env # Use the new env file
+      - ${ENV_FILE:-prod.env}
     depends_on:
+      redis:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    command: python dmarket_parser.py # Command to run the new parser
     restart: unless-stopped
 
   worker:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: dmarket_worker
+    command: poetry run worker
+    volumes:
+      - .:/app
+      - ./utils_mount:/app/utils_mount
     env_file:
-      - worker.dev.env # Ensure this env file has all needed vars (RabbitMQ, Redis, DMarket, Telegram)
+      - ${ENV_FILE:-worker.dev.env}
     depends_on:
-      rabbitmq:
-        condition: service_healthy
       redis:
         condition: service_healthy
-    command: python worker.py # Command to run the worker
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
+
+  # Optional monitoring services
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    restart: unless-stopped
+    profiles:
+      - tracing
 
 volumes:
   rabbitmq_data:
   redis_data:
+  grafana_data:

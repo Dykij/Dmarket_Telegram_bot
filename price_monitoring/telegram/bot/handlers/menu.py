@@ -1,20 +1,19 @@
 """Central router module for the Telegram bot."""
 
 import logging
+
 from aiogram import Router
 
-# Импортируем все обработчики из соответствующих модулей
-from price_monitoring.telegram.bot.handlers import (
-    start, mode, game, filters, offers, navigation
-)
+# Иmnoptupyem вce o6pa6otчuku u3 cootвetctвyющux moдyлeй
+from price_monitoring.telegram.bot.handlers import filters, game, mode, navigation, offers, start
 
-# Создаем логгер
+# Co3дaem лorrep
 logger = logging.getLogger(__name__)
 
-# Создаем главный роутер
+# Co3дaem rлaвhbiй poytep
 router = Router()
 
-# Подключаем все дочерние роутеры
+# Пoдkлючaem вce дoчephue poytepbi
 router.include_router(start.router)
 router.include_router(mode.router)
 router.include_router(game.router)
@@ -22,5 +21,5 @@ router.include_router(filters.router)
 router.include_router(offers.router)
 router.include_router(navigation.router)
 
-# Сообщаем о успешной инициализации
-logger.info("Main menu router successfully initialized") 
+# Coo6щaem o ycneшhoй uhuцuaлu3aцuu
+logger.info("Main menu router successfully initialized")

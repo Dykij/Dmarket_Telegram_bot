@@ -1,105 +1,102 @@
 import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
-import redis.asyncio as redis  # Используем redis.asyncio
-# Импортируем исключения из основного пакета redis
+import redis.asyncio as redis  # Using redis.asyncio
+# Import exceptions from the main redis package
 from redis.exceptions import RedisError
 
-from ..models.dmarket import DMarketItem
+from price_monitoring.models.dmarket import DMarketItem
 
 logger = logging.getLogger(__name__)
 
 
-# Абстрактные классы для работы с хранилищем предметов DMarket
+# Abstract classes for working with DMarket item storage
 class AbstractDmarketItemStorage(ABC):
-    """Абстрактный класс для хранилища предметов DMarket."""
+    """Abstract class for DMarket item storage."""
 
     @property
     def is_trade_ban(self) -> bool:
-        """Проверяет, есть ли торговый бан."""
+        """Check if there is a trade ban."""
         return False
 
     @abstractmethod
-    async def get_all(self) -> Dict[str, float]:
-        """Получает все предметы из хранилища."""
+    async def get_all(self) -> dict[str, float]:
+        """Get all items from storage."""
 
 
 class AbstractDmarketOrdersStorage(ABC):
-    """Абстрактный класс для хранилища ордеров DMarket."""
+    """Abstract class for DMarket orders storage."""
 
     @abstractmethod
-    async def get_all(self) -> Dict[str, Tuple[float, int]]:
-        """Получает все ордера из хранилища."""
+    async def get_all(self) -> dict[str, tuple[float, int]]:
+        """Get all orders from storage."""
 
 
 class AbstractDmarketSellHistoryStorage(ABC):
-    """Абстрактный класс для хранилища истории продаж DMarket."""
+    """Abstract class for DMarket sell history storage."""
 
     @abstractmethod
-    async def get_all(self) -> Dict[str, Any]:
-        """Получает всю историю продаж из хранилища."""
+    async def get_all(self) -> dict[str, Any]:
+        """Get all sell history from storage."""
 
 
 class DMarketStorage:
-    """Хранилище для предметов DMarket с использованием Redis."""
+    """Storage for DMarket items using Redis."""
 
     def __init__(
         self, redis_client: redis.Redis, prefix: str = "dmarket:items", ttl_seconds: int = 3600
     ):
-        """
-        Инициализация хранилища.
+        """Initialize the storage.
 
         Args:
-            redis_client: Асинхронный клиент Redis.
-            prefix: Префикс для ключей в Redis.
-            ttl_seconds: Время жизни ключей в секундах.
+            redis_client: Asynchronous Redis client.
+            prefix: Prefix for Redis keys.
+            ttl_seconds: Time-to-live for keys in seconds.
         """
         self._redis = redis_client
         self._prefix = prefix
         self._ttl = ttl_seconds
 
     def _get_key(self, item_id: str) -> str:
-        """Формирует ключ Redis для заданного ID предмета."""
+        """Generate Redis key for a given item ID."""
         return f"{self._prefix}:{item_id}"
 
     async def save_item(self, item: DMarketItem) -> None:
-        """
-        Сохраняет предмет в Redis с установкой TTL.
+        """Save an item to Redis with TTL.
 
         Args:
-            item: Предмет DMarketItem для сохранения.
+            item: DMarketItem to save.
 
         Raises:
-            RedisError: Если произошла ошибка при работе с Redis.
-            ValueError: Если произошла ошибка сериализации JSON.
+            RedisError: If an error occurs when working with Redis.
+            ValueError: If a JSON serialization error occurs.
         """
         key = self._get_key(item.item_id)
         try:
             item_json = json.dumps(item.to_dict())
             await self._redis.set(key, item_json, ex=self._ttl)
             logger.debug(f"Saved item {item.item_id} to Redis with TTL {self._ttl}s.")
-        # Используем импортированные исключения
+        # Use imported exceptions
         except (RedisError, TypeError, json.JSONDecodeError) as error:
             logger.error(
                 f"Failed to save item {item.item_id} to Redis. Error: {error}", exc_info=True
             )
-            # Перевыбрасываем ошибку Redis, чтобы вызывающий код мог ее обработать
+            # Re-raise Redis error so the calling code can handle it
             if isinstance(error, RedisError):
                 raise error
-            # Иначе выбрасываем ValueError для ошибок сериализации
+            # Otherwise raise ValueError for serialization errors
             raise ValueError(f"Failed to serialize item {item.item_id}") from error
 
     async def get_item(self, item_id: str) -> Optional[DMarketItem]:
-        """
-        Получает предмет из Redis по ID.
+        """Get an item from Redis by ID.
 
         Args:
-            item_id: ID предмета.
+            item_id: Item ID.
 
         Returns:
-            Объект DMarketItem, если найден и успешно десериализован, иначе None.
+            DMarketItem object if found and successfully deserialized, otherwise None.
         """
         key = self._get_key(item_id)
         try:
@@ -112,25 +109,24 @@ class DMarketStorage:
             item = DMarketItem.from_dict(item_data)
             logger.debug(f"Retrieved item {item_id} from Redis.")
             return item
-        # Используем импортированные исключения и ловим KeyError/TypeError для from_dict
+        # Use imported exceptions and catch KeyError/TypeError for from_dict
         except (RedisError, json.JSONDecodeError, TypeError, KeyError) as e:
             logger.error(
                 f"Failed to get or parse item {item_id} from Redis. Error: {e}", exc_info=True
             )
-            return None  # Возвращаем None при любой ошибке получения или парсинга
+            return None  # Return None for any error in retrieval or parsing
 
     async def delete_item(self, item_id: str) -> bool:
-        """
-        Удаляет предмет из Redis по ID.
+        """Delete an item from Redis by ID.
 
         Args:
-            item_id: ID предмета для удаления.
+            item_id: ID of the item to delete.
 
         Returns:
-            True, если предмет был удален, False в противном случае.
+            True if the item was deleted, False otherwise.
 
         Raises:
-            RedisError: Если произошла ошибка при работе с Redis.
+            RedisError: If an error occurs when working with Redis.
         """
         key = self._get_key(item_id)
         try:
@@ -143,28 +139,27 @@ class DMarketStorage:
             return was_deleted
         except RedisError as e:
             logger.error(f"Failed to delete item {item_id} from Redis. Error: {e}", exc_info=True)
-            raise e  # Перевыбрасываем ошибку Redis
+            raise e  # Re-raise Redis error
 
     async def get_and_update_price_if_lower(
         self, game_id: str, title: str, price: float
-    ) -> Tuple[Optional[float], bool]:
-        """
-        Получает предыдущую цену предмета и обновляет ее, если новая цена ниже.
+    ) -> tuple[Optional[float], bool]:
+        """Get the previous price of an item and update it if the new price is lower.
 
         Args:
-            game_id: ID игры предмета
-            title: Название предмета
-            price: Новая цена предмета
+            game_id: Game ID of the item
+            title: Item title
+            price: New item price
 
         Returns:
-            Кортеж (предыдущая_цена, обновлено), где:
-            - предыдущая_цена: предыдущая цена предмета или None, если предмет не найден
-            - обновлено: True, если цена была обновлена, False в противном случае
+            Tuple (previous_price, updated), where:
+            - previous_price: previous item price or None if item not found
+            - updated: True if the price was updated, False otherwise
         """
         item_id = f"{game_id}:{title}"
         key = self._get_key(item_id)
         try:
-            # Пытаемся получить текущую цену
+            # Try to get the current price
             current_price_data = await self._redis.get(key)
             current_price = None
 
@@ -174,7 +169,7 @@ class DMarketStorage:
                 except (ValueError, TypeError) as e:
                     logger.warning(f"Invalid price format for item {item_id}: {e}")
 
-            # Обновляем цену только если она не существует или новая цена ниже текущей
+            # Update price only if it doesn't exist or the new price is lower than current
             update_needed = current_price is None or price < current_price
 
             if update_needed:

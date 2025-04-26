@@ -1,5 +1,4 @@
-"""
-RabbitMQ Client Module
+"""RabbitMQ Client Module
 
 This module provides a client for connecting to RabbitMQ and performing
 common operations such as creating channels and managing connections.
@@ -16,7 +15,7 @@ Features:
 import asyncio
 import logging
 import ssl
-from typing import Dict, List, Optional, Union
+from typing import Optional
 
 from aio_pika import Channel, Connection, connect_robust
 from aio_pika.abc import AbstractChannel, AbstractConnection
@@ -27,8 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class RabbitMQClient:
-    """
-    A client for connecting to RabbitMQ and performing common operations.
+    """A client for connecting to RabbitMQ and performing common operations.
 
     This class provides methods for connecting to RabbitMQ, creating channels,
     and managing connections. It uses aio_pika for asynchronous operations.
@@ -65,8 +63,7 @@ class RabbitMQClient:
         retry_delay: float = 1.0,
         channel_pool_size: int = 10,
     ):
-        """
-        Initialize a new RabbitMQClient.
+        """Initialize a new RabbitMQClient.
 
         Args:
             host: The RabbitMQ server hostname or IP address (or comma-separated list for cluster)
@@ -95,11 +92,10 @@ class RabbitMQClient:
         self.retry_delay = retry_delay
         self.channel_pool_size = channel_pool_size
         self.connection: Optional[Connection] = None
-        self.channel_pool: List[Channel] = []
+        self.channel_pool: list[Channel] = []
 
     async def connect(self) -> "RabbitMQClient":
-        """
-        Connect to the RabbitMQ server.
+        """Connect to the RabbitMQ server.
 
         This method establishes a connection to the RabbitMQ server using the
         connection parameters provided during initialization. It will retry
@@ -122,7 +118,9 @@ class RabbitMQClient:
         for attempt in range(self.retry_attempts):
             for host in hosts:
                 try:
-                    logger.info(f"Connecting to RabbitMQ at {host}:{self.port} (attempt {attempt + 1}/{self.retry_attempts})")
+                    logger.info(
+                        f"Connecting to RabbitMQ at {host}:{self.port} (attempt {attempt + 1}/{self.retry_attempts})"
+                    )
 
                     # Build the connection URL
                     connection_url = f"amqp://{self.login}:{self.password}@{host}:{self.port}/{self.virtual_host}"
@@ -145,12 +143,14 @@ class RabbitMQClient:
                     return self
 
                 except AMQPConnectionError as e:
-                    logger.warning(f"Failed to connect to RabbitMQ at {host}:{self.port}: {str(e)}")
+                    logger.warning(f"Failed to connect to RabbitMQ at {host}:{self.port}: {e!s}")
                     continue
 
             # If we've tried all hosts and none worked, wait before retrying
             if attempt < self.retry_attempts - 1:
-                logger.warning(f"Failed to connect to any RabbitMQ host, retrying in {self.retry_delay} seconds")
+                logger.warning(
+                    f"Failed to connect to any RabbitMQ host, retrying in {self.retry_delay} seconds"
+                )
                 await asyncio.sleep(self.retry_delay)
 
         # If we've exhausted all retry attempts, raise an error
@@ -158,9 +158,10 @@ class RabbitMQClient:
         logger.error(error_msg)
         raise AMQPConnectionError(error_msg)
 
-    def _on_connection_closed(self, connection: AbstractConnection, exception: Optional[Exception] = None) -> None:
-        """
-        Handle connection closed events.
+    def _on_connection_closed(
+        self, connection: AbstractConnection, exception: Optional[Exception] = None
+    ) -> None:
+        """Handle connection closed events.
 
         This callback is called when the connection to RabbitMQ is closed,
         either by the client or due to an error.
@@ -170,7 +171,7 @@ class RabbitMQClient:
             exception: The exception that caused the connection to close, if any
         """
         if exception:
-            logger.warning(f"RabbitMQ connection closed unexpectedly: {str(exception)}")
+            logger.warning(f"RabbitMQ connection closed unexpectedly: {exception!s}")
         else:
             logger.info("RabbitMQ connection closed")
 
@@ -178,8 +179,7 @@ class RabbitMQClient:
         self.channel_pool = []
 
     async def create_channel(self) -> Channel:
-        """
-        Create a new RabbitMQ channel.
+        """Create a new RabbitMQ channel.
 
         This method creates a new channel on the current connection.
         If no connection exists, it first establishes a connection.
@@ -211,12 +211,13 @@ class RabbitMQClient:
 
             return channel
         except AMQPError as e:
-            logger.error(f"Failed to create RabbitMQ channel: {str(e)}")
+            logger.error(f"Failed to create RabbitMQ channel: {e!s}")
             raise
 
-    def _on_channel_closed(self, channel: AbstractChannel, exception: Optional[Exception] = None) -> None:
-        """
-        Handle channel closed events.
+    def _on_channel_closed(
+        self, channel: AbstractChannel, exception: Optional[Exception] = None
+    ) -> None:
+        """Handle channel closed events.
 
         This callback is called when a channel is closed,
         either by the client or due to an error.
@@ -226,13 +227,12 @@ class RabbitMQClient:
             exception: The exception that caused the channel to close, if any
         """
         if exception:
-            logger.warning(f"RabbitMQ channel closed unexpectedly: {str(exception)}")
+            logger.warning(f"RabbitMQ channel closed unexpectedly: {exception!s}")
         else:
             logger.debug("RabbitMQ channel closed")
 
     async def return_channel(self, channel: Channel) -> None:
-        """
-        Return a channel to the pool for reuse.
+        """Return a channel to the pool for reuse.
 
         This method adds a channel back to the pool if it's still open
         and the pool is not full. Otherwise, it closes the channel.
@@ -246,8 +246,7 @@ class RabbitMQClient:
             await self.close_channel(channel)
 
     async def close_channel(self, channel: Channel) -> None:
-        """
-        Close a RabbitMQ channel.
+        """Close a RabbitMQ channel.
 
         This method closes the specified channel if it's open.
 
@@ -259,11 +258,10 @@ class RabbitMQClient:
                 await channel.close()
                 logger.debug("RabbitMQ channel closed")
             except AMQPError as e:
-                logger.warning(f"Error closing RabbitMQ channel: {str(e)}")
+                logger.warning(f"Error closing RabbitMQ channel: {e!s}")
 
     async def close(self) -> None:
-        """
-        Close the connection to the RabbitMQ server.
+        """Close the connection to the RabbitMQ server.
 
         This method closes all channels in the pool and then closes
         the underlying RabbitMQ connection. If no connection exists,
@@ -281,6 +279,6 @@ class RabbitMQClient:
                 await self.connection.close()
                 logger.info("RabbitMQ connection closed successfully")
             except AMQPError as e:
-                logger.warning(f"Error closing RabbitMQ connection: {str(e)}")
+                logger.warning(f"Error closing RabbitMQ connection: {e!s}")
             finally:
                 self.connection = None

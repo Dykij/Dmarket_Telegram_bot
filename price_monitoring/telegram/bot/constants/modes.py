@@ -1,35 +1,28 @@
 """Trading mode constants for the Telegram bot."""
 
-# Режимы работы и их настройки
+# Peжumbi pa6otbi u ux hactpoйku
 TRADING_MODES = {
     "balance_boost": {
-        "name": "Разгон баланса",
+        "name": "Pa3roh 6aлahca",
         "min_profit": 1,
         "max_profit": 5,
-        "description": (
-            "Поиск предметов с небольшой прибылью ($1-5) "
-            "и низким риском"
-        ),
-        "emoji": "\U0001F4B8"  # 💸
+        "description": ("Пouck npeдmetoв c he6oл'шoй npu6biл'ю ($1-5) u hu3kum puckom"),
+        "emoji": "\U0001f4b8",  # 💸
     },
     "medium_trader": {
-        "name": "Средний трейдер",
+        "name": "Cpeдhuй tpeйдep",
         "min_profit": 5,
         "max_profit": 20,
         "description": (
-            "Фокус на предметах со средней прибылью ($5-20), "
-            "приоритет ликвидным предметам"
+            "Фokyc ha npeдmetax co cpeдheй npu6biл'ю ($5-20), npuoputet лukвuдhbim npeдmetam"
         ),
-        "emoji": "\U0001F4B0"  # 💰
+        "emoji": "\U0001f4b0",  # 💰
     },
     "trade_pro": {
         "name": "Trade Pro",
         "min_profit": 20,
         "max_profit": 100,
-        "description": (
-            "Поиск редких предметов с высокой прибылью ($20-100) "
-            "и анализ трендов"
-        ),
-        "emoji": "\U0001F4C8"  # 📈
-    }
-} 
+        "description": ("Пouck peдkux npeдmetoв c вbicokoй npu6biл'ю ($20-100) u ahaлu3 tpehдoв"),
+        "emoji": "\U0001f4c8",  # 📈
+    },
+}

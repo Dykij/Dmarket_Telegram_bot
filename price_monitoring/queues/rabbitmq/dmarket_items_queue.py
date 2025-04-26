@@ -1,13 +1,8 @@
-import logging
-
 from common.rpc.queue_publisher import QueuePublisher
 from common.rpc.queue_reader import QueueReader
-
 from price_monitoring.models.dmarket import DMarketItemPack
-from price_monitoring.queues.abstract_dmarket_item_queue import (
-    AbstractDmarketItemReader,
-    AbstractDmarketItemWriter,
-)
+from price_monitoring.queues.abstract_dmarket_item_queue import (AbstractDmarketItemReader,
+                                                                 AbstractDmarketItemWriter)
 
 
 class DmarketItemReader(AbstractDmarketItemReader):

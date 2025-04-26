@@ -2,11 +2,11 @@ import asyncio
 import logging
 
 from common.tracer import annotate, trace
+from price_monitoring.decorators import async_infinite_loop
+from price_monitoring.telegram.bot import AbstractBot
+from price_monitoring.telegram.fresh_filter import AbstractFilter
+from price_monitoring.telegram.offer_provider import AbstractOfferProvider
 
-from ...decorators import async_infinite_loop
-from ..bot import AbstractBot
-from ..fresh_filter import AbstractFilter
-from ..offer_provider import AbstractOfferProvider
 from .abstract_runner import AbstractRunner
 
 logger = logging.getLogger(__name__)

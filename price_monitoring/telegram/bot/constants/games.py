@@ -1,12 +1,7 @@
-"""Константы, связанные с играми для Telegram-бота."""
+"""Kohctahtbi, cвя3ahhbie c urpamu для Telegram-6ota."""
 
-# Список поддерживаемых игр
+# Cnucok noддepжuвaembix urp
 SUPPORTED_GAMES = ["CS2", "Dota2", "TF2", "Rust"]
 
-# Эмодзи для игр
-GAME_EMOJIS = {
-    "CS2": "🔫",
-    "Dota2": "🧙‍♂️",
-    "TF2": "🎩",
-    "Rust": "🏝️"
-} 
+# Эmoд3u для urp
+GAME_EMOJIS = {"CS2": "🔫", "Dota2": "🧙‍♂️", "TF2": "🎩", "Rust": "🏝️"}

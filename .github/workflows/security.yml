@@ -1,0 +1,60 @@
+name: Security Checks
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  schedule:
+    - cron: '0 0 * * 0'  # Run weekly on Sundays at midnight
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 1.4.2
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        installer-parallel: true
+        
+    - name: Install dependencies
+      run: |
+        poetry install --no-interaction --no-root
+        poetry add --group dev bandit safety
+        
+    - name: Run bandit
+      run: poetry run bandit -r price_monitoring/ bot_handlers/ common/ config/ monitoring/ -x tests/
+      
+    - name: Run safety check
+      run: poetry run safety check
+
+  docker-security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Build Docker image
+      run: docker build -t dmarket-bot:latest .
+      
+    - name: Scan Docker image
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'dmarket-bot:latest'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        severity: 'CRITICAL,HIGH'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'

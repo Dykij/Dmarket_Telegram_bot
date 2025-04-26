@@ -10,7 +10,7 @@ T = TypeVar("T")
 
 
 class AbstractQueue(Generic[T]):
-    """Абстрактный класс для очередей"""
+    """A6ctpakthbiй kлacc для oчepeдeй"""
 
     queue_name: str
     payload_type: Any

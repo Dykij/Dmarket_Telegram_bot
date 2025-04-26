@@ -7,10 +7,10 @@ from price_monitoring.models.dmarket import DMarketItemPack
 class AbstractDmarketItemReader(ABC):
     @abstractmethod
     async def get(self, timeout: int = 5) -> Optional[DMarketItemPack]:
-        """Читает данные о предметах из очереди с указанным таймаутом."""
+        """Чutaet дahhbie o npeдmetax u3 oчepeдu c yka3ahhbim taйmaytom."""
 
 
 class AbstractDmarketItemWriter(ABC):
     @abstractmethod
     async def put(self, item: DMarketItemPack) -> None:
-        """Записывает информацию о предметах в очередь."""
+        """3anucbiвaet uhфopmaцuю o npeдmetax в oчepeд'."""

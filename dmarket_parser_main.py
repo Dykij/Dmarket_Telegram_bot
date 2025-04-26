@@ -1,5 +1,4 @@
-"""
-DMarket Parser Main Module
+"""DMarket Parser Main Module
 
 This module serves as the main entry point for the DMarket parser application.
 It continuously fetches items from the DMarket API and publishes them to a RabbitMQ queue
@@ -9,37 +8,34 @@ The parser supports multiple game IDs and implements retry logic with exponentia
 to handle API errors gracefully.
 """
 
+# Применяем патчи для совместимости с aioredis 2.0.0+
+
 import asyncio
 import logging
 import time
-from typing import List
 
 from dotenv import load_dotenv
 
-from common.env_var import (
-    API_REQUEST_DELAY_SECONDS,  # Delay between API requests in seconds
-    CURRENCY,                   # Currency for item prices (e.g., USD)
-    DMARKET_GAME_IDS,           # Comma-separated list of game IDs to parse
-    ITEMS_PER_PAGE,             # Number of items to fetch per API request
-    LOG_LEVEL,                  # Logging level (INFO, DEBUG, etc.)
-    PARSE_DELAY_SECONDS,        # Delay between parsing cycles in seconds
-    RABBITMQ_HOST,              # RabbitMQ host address
-    RABBITMQ_PASSWORD,          # RabbitMQ password
-    RABBITMQ_PORT,              # RabbitMQ port
-    RABBITMQ_USER,              # RabbitMQ username
-    RABBITMQ_VIRTUAL_HOST,      # RabbitMQ virtual host
-    DMARKET_PUBLIC_KEY,         # DMarket API public key
-    DMARKET_SECRET_KEY,         # DMarket API secret key
-)
+from common.dmarket_auth import DMarketAuth
+from common.env_var import API_REQUEST_DELAY_SECONDS  # Delay between API requests in seconds
+from common.env_var import CURRENCY  # Currency for item prices (e.g., USD)
+from common.env_var import DMARKET_GAME_IDS  # Comma-separated list of game IDs to parse
+from common.env_var import DMARKET_PUBLIC_KEY  # DMarket API public key
+from common.env_var import DMARKET_SECRET_KEY  # DMarket API secret key
+from common.env_var import ITEMS_PER_PAGE  # Number of items to fetch per API request
+from common.env_var import LOG_LEVEL  # Logging level (INFO, DEBUG, etc.)
+from common.env_var import PARSE_DELAY_SECONDS  # Delay between parsing cycles in seconds
+from common.env_var import RABBITMQ_HOST  # RabbitMQ host address
+from common.env_var import RABBITMQ_PASSWORD  # RabbitMQ password
+from common.env_var import RABBITMQ_PORT  # RabbitMQ port
+from common.env_var import RABBITMQ_USER  # RabbitMQ username
+from common.env_var import RABBITMQ_VIRTUAL_HOST  # RabbitMQ virtual host
 from common.rabbitmq_connector import RabbitMQConnector
 from price_monitoring.logs import setup_logging
 from price_monitoring.parsers.dmarket.items_parser import DMarketItemsParser
-from price_monitoring.queues.rabbitmq.raw_items_queue import (
-    DMarketRawItemsQueuePublisher, DMARKET_RAW_ITEMS_QUEUE_NAME
-)
+from price_monitoring.queues.rabbitmq.raw_items_queue import (DMARKET_RAW_ITEMS_QUEUE_NAME,
+                                                              DMarketRawItemsQueuePublisher)
 from proxy_http.aiohttp_session_factory import AiohttpSessionFactory
-from common.dmarket_auth import DMarketAuth
-
 
 # Load environment variables from .env file
 load_dotenv("dmarket_parser.dev.env")
@@ -56,8 +52,7 @@ async def parse_game(
     items_per_page: int,
     api_request_delay: float,
 ) -> int:
-    """
-    Parses all items for a specific game ID using DMarketItemsParser.
+    """Parses all items for a specific game ID using DMarketItemsParser.
 
     This function initializes a DMarketItemsParser with the provided parameters,
     fetches items from the DMarket API, and publishes them to a RabbitMQ queue.
@@ -96,7 +91,7 @@ async def parse_game(
         if errors:
             logger.warning(f"Encountered {len(errors)} errors during parsing game {game_id}:")
             for i, error in enumerate(errors[:5]):  # Log first 5 errors
-                logger.warning(f"  Error {i+1}: {error}")
+                logger.warning(f"  Error {i + 1}: {error}")
             if len(errors) > 5:
                 logger.warning(f"  ... and {len(errors) - 5} more errors.")
 
@@ -109,10 +104,14 @@ async def parse_game(
                     await publisher.publish_item(item)
                     published_count += 1
                 except Exception as pub_err:
-                    logger.error(f"Failed to publish item {item.item_id} for game {game_id}: {pub_err}")
+                    logger.error(
+                        f"Failed to publish item {item.item_id} for game {game_id}: {pub_err}"
+                    )
                     # Optional: Implement retry or dead-letter queue logic here
             total_items_published = published_count
-            logger.info(f"Successfully published {published_count}/{len(items)} items for game {game_id}.")
+            logger.info(
+                f"Successfully published {published_count}/{len(items)} items for game {game_id}."
+            )
         else:
             logger.info(f"No items parsed or published for game {game_id}.")
 
@@ -128,8 +127,7 @@ async def parse_game(
 
 
 async def main() -> None:
-    """
-    Main function to run the DMarket parser.
+    """Main function to run the DMarket parser.
 
     This function:
     1. Initializes the HTTP session factory for making API requests
@@ -162,7 +160,9 @@ async def main() -> None:
 
     # Initialize DMarket Auth with API keys
     if not DMARKET_PUBLIC_KEY or not DMARKET_SECRET_KEY:
-        logger.error("DMarket API keys (DMARKET_PUBLIC_KEY, DMARKET_SECRET_KEY) are not set. Exiting.")
+        logger.error(
+            "DMarket API keys (DMARKET_PUBLIC_KEY, DMARKET_SECRET_KEY) are not set. Exiting."
+        )
         return
     dmarket_auth = DMarketAuth(public_key=DMARKET_PUBLIC_KEY, secret_key=DMARKET_SECRET_KEY)
 
@@ -184,8 +184,7 @@ async def main() -> None:
 
         # Create the specific publisher for raw items
         publisher = DMarketRawItemsQueuePublisher(
-            connector=rabbitmq_connector, 
-            queue_name=DMARKET_RAW_ITEMS_QUEUE_NAME
+            connector=rabbitmq_connector, queue_name=DMARKET_RAW_ITEMS_QUEUE_NAME
         )
 
         # Main parsing loop
@@ -228,7 +227,7 @@ async def main() -> None:
         # Ensure proper cleanup of resources
         logger.info("Shutting down DMarket Parser...")
         if publisher:
-             await publisher.close()  # Close publisher channel
+            await publisher.close()  # Close publisher channel
         if rabbitmq_connector:
             await rabbitmq_connector.close()
         # Close aiohttp sessions

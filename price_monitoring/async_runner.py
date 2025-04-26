@@ -1,9 +1,8 @@
-"""
-Утилиты для запуска асинхронного кода.
+"""Ytuлutbi для 3anycka acuhxpohhoro koдa.
 
-Модуль предоставляет функции для запуска асинхронных задач с учетом
-специфики операционной системы, использует оптимальные политики
-событийного цикла для каждой платформы.
+Moдyл' npeдoctaвляet фyhkцuu для 3anycka acuhxpohhbix 3aдaч c yчetom
+cneцuфuku onepaцuohhoй cuctembi, ucnoл'3yet ontumaл'hbie noлutuku
+co6bituйhoro цukлa для kaждoй nлatфopmbi.
 """
 
 import asyncio
@@ -23,16 +22,15 @@ except ImportError:
 
 
 def async_run(func: Coroutine[Any, Any, Any]):
-    """
-    Запустить асинхронную корутину с оптимизацией для текущей ОС.
+    """3anyctut' acuhxpohhyю kopytuhy c ontumu3aцueй для tekyщeй OC.
 
-    Функция определяет текущую операционную систему и настраивает
-    соответствующую политику событийного цикла. Для Windows используется
-    WindowsSelectorEventLoopPolicy, а для других систем - uvloop,
-    если он доступен.
+    Фyhkцuя onpeдeляet tekyщyю onepaцuohhyю cuctemy u hactpauвaet
+    cootвetctвyющyю noлutuky co6bituйhoro цukлa. Для Windows ucnoл'3yetcя
+    WindowsSelectorEventLoopPolicy, a для дpyrux cuctem - uvloop,
+    ecлu oh дoctyneh.
 
     Args:
-        func: Асинхронная корутина, которую необходимо выполнить
+        func: Acuhxpohhaя kopytuha, kotopyю heo6xoдumo вbinoлhut'
     """
     if platform.system() == "Windows":
         asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())

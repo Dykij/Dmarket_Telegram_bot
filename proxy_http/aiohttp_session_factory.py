@@ -1,47 +1,92 @@
-from collections.abc import Mapping
-from typing import Optional
+"""Factory for creating aiohttp sessions.
 
-from aiohttp import ClientSession
+This module provides a factory for creating aiohttp sessions with proxy support.
+"""
 
-from proxy_http.aiohttp_addons.aihttp_socks_connector import ProxyConnector
-from proxy_http.proxy import Proxy
+import logging
+import random
+from typing import Dict, List, Optional
+
+import aiohttp
+
+logger = logging.getLogger(__name__)
 
 
 class AiohttpSessionFactory:
-    def __init__(self):
-        """Initialize the aiohttp session factory."""
-        self._sessions = []
+    """Factory for creating aiohttp sessions.
 
-    def create_session(self) -> ClientSession:
-        """Create a new aiohttp session and add it to the sessions list.
+    This class provides methods for creating aiohttp sessions with
+    optional proxy support.
+    """
 
-        Returns:
-            ClientSession: New aiohttp session
-        """
-        session = ClientSession()
-        self._sessions.append(session)
-        return session
-
-    def create_session_with_proxy(
-        self, proxy: Proxy, headers: Optional[Mapping[str, str]] = None
-    ) -> ClientSession:
-        """Create a new aiohttp session with a proxy and add it to the sessions list.
+    def __init__(self, proxy_file_path: Optional[str] = None):
+        """Initialize the factory.
 
         Args:
-            proxy: Proxy object
-            headers: HTTP headers (optional)
+            proxy_file_path: Path to file with proxy list (optional)
+        """
+        self.proxies: List[str] = []
+        self.proxy_file_path = proxy_file_path
+
+        if proxy_file_path:
+            self._load_proxies()
+
+    def _load_proxies(self) -> None:
+        """Load proxies from file."""
+        if not self.proxy_file_path:
+            return
+
+        try:
+            with open(self.proxy_file_path) as file:
+                self.proxies = [line.strip() for line in file if line.strip()]
+            logger.info(f"Loaded {len(self.proxies)} proxies from {self.proxy_file_path}")
+        except Exception as e:
+            logger.error(f"Error loading proxies: {e}")
+
+    def _get_random_proxy(self) -> Optional[str]:
+        """Get a random proxy from the list.
 
         Returns:
-            ClientSession: New aiohttp session with proxy
+            Random proxy URL or None if no proxies available
         """
-        connector = ProxyConnector.from_url(proxy.serialize(), ssl=False)
-        session = ClientSession(connector=connector, headers=headers)
-        self._sessions.append(session)
-        return session
+        if not self.proxies:
+            return None
+        return random.choice(self.proxies)
 
-    async def close_all_sessions(self) -> None:
-        """Close all created aiohttp sessions."""
-        for session in self._sessions:
-            if not session.closed:
-                await session.close()
-        self._sessions.clear()
+    def create_session(
+        self,
+        use_proxy: bool = False,
+        proxy_url: Optional[str] = None,
+        headers: Optional[Dict[str, str]] = None,
+        verify_ssl: bool = True,
+        timeout: Optional[aiohttp.ClientTimeout] = None,
+    ) -> aiohttp.ClientSession:
+        """Create an aiohttp session.
+
+        Args:
+            use_proxy: Whether to use proxy
+            proxy_url: Specific proxy URL to use (optional)
+            headers: HTTP headers to include (optional)
+            verify_ssl: Whether to verify SSL certificates
+            timeout: Request timeout
+
+        Returns:
+            Configured aiohttp session
+        """
+        session_kwargs = {}
+
+        if headers:
+            session_kwargs["headers"] = headers
+
+        if timeout:
+            session_kwargs["timeout"] = timeout
+
+        if use_proxy:
+            if proxy_url:
+                session_kwargs["proxy"] = proxy_url
+            elif self.proxies:
+                session_kwargs["proxy"] = self._get_random_proxy()
+
+        session_kwargs["connector"] = aiohttp.TCPConnector(verify_ssl=verify_ssl)
+
+        return aiohttp.ClientSession(**session_kwargs)

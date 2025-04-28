@@ -1,5 +1,4 @@
-from .abstract_parser import AbstractParser
+"""Parsers module.
 
-__all__ = [
-    "AbstractParser",
-]
+This module contains parsers for various marketplaces.
+"""

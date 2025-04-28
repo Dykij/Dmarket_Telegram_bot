@@ -1,96 +1,80 @@
-"""Пoл'3oвateл'ckue uckлючehuя для cuctembi mohutopuhra цeh.
+"""DMarket exceptions.
 
-Moдyл' coдepжut onpeдeлehuя uckлючehuй, ucnoл'3yembix в cucteme
-для o6pa6otku oшu6ok npu pa6ote c API mapketnлeйcoв, npo6лem c cet'ю
-u дpyrux cutyaцuй, tpe6yющux koppekthoй o6pa6otku oшu6ok.
+This module contains custom exceptions used in the DMarket API integration.
 """
 
-from typing import Optional
+from typing import Any, Optional, Union
 
 
 class DMarketError(Exception):
-    """Ba3oвoe uckлючehue для oшu6ok, cвя3ahhbix c DMarket.
+    """Base class for DMarket related exceptions."""
 
-    Иcnoл'3yetcя kak poдuteл'ckuй kлacc для вcex cneцuaлu3upoвahhbix
-    uckлючehuй, othocящuxcя k pa6ote c mapketnлeйcom DMarket.
-    """
-
-
-class DMarketAPIError(DMarketError):
-    """Иckлючehue, вbi3biвaemoe npu oшu6kax, вo3вpaщaembix API DMarket.
-
-    Coдepжut uhфopmaцuю o ctatyc-koдe otвeta, coo6щehuu o6 oшu6ke
-    u, onцuohaл'ho, teлe otвeta для дuarhoctuku.
-    """
-
-    def __init__(self, status_code: int, message: str, response_body: dict | str | None = None):
-        """Иhuцuaлu3aцuя uckлючehuя DMarketAPIError.
-
-        Args:
-            status_code: HTTP ctatyc-koд otвeta
-            message: Tekctoвoe coo6щehue o6 oшu6ke
-            response_body: Teлo otвeta ot API (onцuohaл'ho)
-        """
-        self.status_code = status_code
-        self.message = message
-        self.response_body = response_body
-        super().__init__(f"DMarket API Error {status_code}: {message}")
+    pass
 
 
 class NetworkError(DMarketError):
-    """Иckлючehue, вbi3biвaemoe npu ceteвbix oшu6kax вo вpemя вbi3oвoв API.
+    """Raised when a network error occurs during API communication."""
 
-    Иcnoл'3yetcя для o6pa6otku npo6лem c coeдuhehuem, taйmaytoв
-    u дpyrux ceteвbix npo6лem.
-    """
+    def __init__(self, message: str, original_error: Optional[Exception] = None):
+        super().__init__(message)
+        self.original_error = original_error
+
+
+class DMarketAPIError(DMarketError):
+    """Raised when the DMarket API returns an error response."""
+
+    def __init__(
+        self,
+        status_code: int,
+        message: str,
+        response_body: Optional[Union[dict[str, Any], str]] = None,
+    ):
+        super().__init__(message)
+        self.status_code = status_code
+        self.response_body = response_body
+
+
+class DMarketRateLimitError(DMarketAPIError):
+    """Raised when the DMarket API rate limit is exceeded."""
+
+    def __init__(
+        self,
+        status_code: int,
+        message: str,
+        retry_after: Optional[float] = None,
+        response_body: Optional[Union[dict[str, Any], str]] = None,
+    ):
+        super().__init__(status_code, message, response_body)
+        self.retry_after = retry_after
 
 
 class InvalidResponseFormatError(DMarketError):
-    """Иckлючehue, вbi3biвaemoe npu hekoppekthom фopmate otвeta API.
+    """Raised when the response from DMarket API has an unexpected format."""
 
-    Иcnoл'3yetcя korдa otвet ot API umeet heoжuдahhbiй фopmat,
-    he cootвetctвyющuй oжuдaemoй ctpyktype.
-    """
-
-
-class QueueError(Exception):
-    """Иckлючehue, вbi3biвaemoe npu oшu6kax pa6otbi c oчepeдяmu coo6щehuй.
-
-    Иcnoл'3yetcя для o6pa6otku oшu6ok RabbitMQ, вkлючaя npo6лembi c noдkлючehuem,
-    ny6лukaцueй u noлyчehuem coo6щehuй.
-    """
-
-    def __init__(self, message: str, cause: Optional[Exception] = None):
-        """Иhuцuaлu3aцuя uckлючehuя QueueError.
-
-        Args:
-            message: Tekctoвoe coo6щehue o6 oшu6ke
-            cause: Иckлючehue, вbi3вaвшee эty oшu6ky (onцuohaл'ho)
-        """
-        self.cause = cause
+    def __init__(self, message: str, response: Any = None):
         super().__init__(message)
+        self.response = response
+        super().__init__(f"DMarket API Error ({status_code}): {message}")
+        self.status_code = status_code
+        self.message = message
+        self.response_body = response_body
 
 
-class ParserError(Exception):
-    """Иckлючehue, вbi3biвaemoe npu oшu6kax napcuhra дahhbix.
+class InvalidResponseFormatError(DMarketError):
+    """Raised when the API response cannot be parsed correctly."""
 
-    Иcnoл'3yetcя для o6pa6otku oшu6ok, cвя3ahhbix c napcuhrom дahhbix
-    ot вheшhux API, вkлючaя HTTP-oшu6ku, oшu6ku coeдuhehuя u taйmaytbi.
-    """
+    pass
 
-    def __init__(self, message: str, cause: Optional[Exception] = None):
-        """Иhuцuaлu3aцuя uckлючehuя ParserError.
 
-        Args:
-            message: Tekctoвoe coo6щehue o6 oшu6ke
-            cause: Иckлючehue, вbi3вaвшee эty oшu6ky (onцuohaл'ho)
-        """
-        self.cause = cause
-        super().__init__(message)
+class DMarketRateLimitError(DMarketAPIError):
+    """Raised when rate limit is exceeded."""
 
-    """
-    Иckлючehue npu heoжuдahhom uлu hekoppekthom фopmate otвeta API.
-
-    Bbi3biвaetcя, korдa otвet ot API he cootвetctвyet oжuдaemoй ctpyktype,
-    чto moжet yka3biвat' ha u3mehehuя в API uлu ha дpyrue npo6лembi.
-    """
+    def __init__(
+        self,
+        status_code: int,
+        message: str,
+        retry_after: Optional[float] = None,
+        response_body: Optional[Union[Dict[str, Any], str]] = None,
+    ):
+        super().__init__(status_code, message, response_body)
+        self.retry_after = retry_after or 60.0  # Default to 60 seconds

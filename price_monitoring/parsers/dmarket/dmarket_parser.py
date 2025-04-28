@@ -15,12 +15,21 @@ from typing import Any, Optional
 
 import aiohttp
 
-from price_monitoring.constants.dmarket_api import (DMARKET_BASE_URL, DMARKET_ITEM_DETAILS_ENDPOINT,
-                                                    DMARKET_MARKET_ITEMS_ENDPOINT,
-                                                    DMARKET_MAX_RETRIES, DMARKET_REQUEST_TIMEOUT,
-                                                    DMARKET_RETRY_DELAY, USE_PROXY)
-from price_monitoring.exceptions import (DMarketAPIError, InvalidResponseFormatError, NetworkError,
-                                         ParserError)
+from price_monitoring.constants.dmarket_api import (
+    DMARKET_BASE_URL,
+    DMARKET_ITEM_DETAILS_ENDPOINT,
+    DMARKET_MARKET_ITEMS_ENDPOINT,
+    DMARKET_MAX_RETRIES,
+    DMARKET_REQUEST_TIMEOUT,
+    DMARKET_RETRY_DELAY,
+    USE_PROXY,
+)
+from price_monitoring.exceptions import (
+    DMarketAPIError,
+    InvalidResponseFormatError,
+    NetworkError,
+    ParserError,
+)
 from proxy_http.aiohttp_session_factory import AiohttpSessionFactory
 
 from ...models.dmarket import DMarketItem

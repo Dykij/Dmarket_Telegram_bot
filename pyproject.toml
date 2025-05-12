@@ -177,7 +177,7 @@ safety = "^3.3.1"
 ruff = "^0.11.6"
 sphinx = "^8.2.3"
 sphinx-rtd-theme = "^3.0.2"
-sphinx-autodoc-typehints = "^3.1.0"
+sphinx-autodoc-typehints = "^3.2.0"
 
 [tool.poetry.group.linux]
 optional = true
